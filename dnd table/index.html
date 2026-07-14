@@ -23,6 +23,7 @@
             margin: 0;
             padding: 10px;
             touch-action: none;
+            padding-bottom: 20px;
         }
         h1 {
             font-size: 22px;
@@ -274,51 +275,48 @@
             cursor: pointer;
         }
 
-        /* ===== ЛОГ БРОСКОВ ===== */
+        /* ===== ЛОГ БРОСКОВ (внизу страницы) ===== */
         .roll-log-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            max-width: 280px;
-            width: 100%;
-            background: rgba(20, 20, 20, 0.92);
+            max-width: 600px;
+            margin: 15px auto 0 auto;
+            background: rgba(20, 20, 20, 0.95);
             border-radius: 12px;
             padding: 10px 15px;
-            border: 1px solid #444;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-            max-height: 200px;
+            border: 1px solid #333;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 95vw;
+            max-height: 180px;
             overflow-y: auto;
-            pointer-events: none;
         }
         .roll-log-container::-webkit-scrollbar {
-            width: 3px;
+            width: 4px;
         }
         .roll-log-container::-webkit-scrollbar-track {
             background: transparent;
         }
         .roll-log-container::-webkit-scrollbar-thumb {
-            background: #555;
+            background: #444;
             border-radius: 10px;
         }
         .roll-log-title {
-            font-size: 11px;
+            font-size: 12px;
             color: #888;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 5px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #2a2a2a;
             padding-bottom: 5px;
+            text-align: left;
         }
         .roll-log-entry {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            padding: 3px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            gap: 10px;
+            font-size: 14px;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             color: #eee;
+            text-align: left;
         }
         .roll-log-entry:last-child {
             border-bottom: none;
@@ -329,22 +327,25 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 70px;
+            max-width: 80px;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .roll-log-entry .roll-dice {
+            color: #888;
             font-size: 12px;
+            flex-shrink: 0;
         }
         .roll-log-entry .roll-value {
             color: #fff;
             font-weight: bold;
             background: #2a2a2a;
-            padding: 0 8px;
+            padding: 0 10px;
             border-radius: 4px;
-            min-width: 25px;
+            min-width: 30px;
             text-align: center;
-            font-size: 13px;
-        }
-        .roll-log-entry .roll-dice {
-            color: #888;
-            font-size: 11px;
+            font-size: 14px;
+            flex-shrink: 0;
         }
         .roll-log-entry .roll-crit {
             color: #f1c40f;
@@ -354,6 +355,14 @@
             color: #e74c3c;
             animation: pulseRed 0.5s ease;
         }
+        .roll-log-empty {
+            color: #555;
+            font-style: italic;
+            font-size: 13px;
+            padding: 5px 0;
+            text-align: center;
+        }
+
         @keyframes pulseGold {
             0% { transform: scale(1); }
             50% { transform: scale(1.3); color: #ffd700; }
@@ -368,27 +377,29 @@
         /* ===== ТОСТ (маленькое уведомление) ===== */
         .roll-toast {
             position: fixed;
-            bottom: 200px;
-            right: 20px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.85);
             color: #fff;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 14px;
-            border-left: 3px solid #f1c40f;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 15px;
+            border: 1px solid #f1c40f;
             z-index: 999;
-            animation: slideInRight 0.3s ease, fadeOut 3s ease 2.5s forwards;
+            animation: slideUp 0.3s ease, fadeOut 3s ease 2.5s forwards;
             pointer-events: none;
-            max-width: 250px;
+            max-width: 90%;
+            white-space: nowrap;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
         }
-        @keyframes slideInRight {
-            0% { transform: translateX(100px); opacity: 0; }
-            100% { transform: translateX(0); opacity: 1; }
+        @keyframes slideUp {
+            0% { transform: translateX(-50%) translateY(30px); opacity: 0; }
+            100% { transform: translateX(-50%) translateY(0); opacity: 1; }
         }
         @keyframes fadeOut {
             0% { opacity: 1; }
-            100% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
         }
 
         .hint {
@@ -465,17 +476,16 @@
     <!-- ===== КУБИКИ ===== -->
     <div class="dice-area" id="diceDisplay">🎲</div>
     <div class="log" id="log">Добро пожаловать!</div>
-    <div class="hint">👆 Перетащи фигурку. Все видят синхронно!</div>
 
-    <!-- ===== ЛОГ БРОСКОВ ===== -->
+    <!-- ===== ЛОГ БРОСКОВ (внизу страницы) ===== -->
     <div class="roll-log-container" id="rollLogContainer">
         <div class="roll-log-title">📜 История бросков</div>
         <div id="rollLogEntries">
-            <div class="roll-log-entry" style="color:#666; font-style:italic;">
-                Броски будут здесь...
-            </div>
+            <div class="roll-log-empty">Броски будут здесь...</div>
         </div>
     </div>
+
+    <div class="hint">👆 Перетащи фигурку. Все видят синхронно!</div>
 
     <script>
         // ============================================
@@ -703,7 +713,7 @@
         // ========== СМЕНА КАРТЫ ==========
         function changeMap(mapName) {
             const map = document.getElementById('mapWrapper');
-            map.style.backgroundImage = `url('images/${mapName}.jpg')`;
+            map.style.backgroundImage = 'url(\'images/' + mapName + '.jpg\')';
             document.getElementById('log').textContent = '🗺️ Карта: ' + mapName;
             if (navigator.vibrate) navigator.vibrate(20);
 
@@ -719,13 +729,14 @@
         }
 
         // ========== ЛОГ БРОСКОВ ==========
-        const MAX_LOG_ENTRIES = 8;
+        const MAX_LOG_ENTRIES = 12;
 
         function addLogEntry(player, sides, result) {
             const container = document.getElementById('rollLogEntries');
             
-            const placeholder = container.querySelector('.roll-log-entry[style*="italic"]');
-            if (placeholder) placeholder.remove();
+            // Удаляем заглушку
+            const empty = container.querySelector('.roll-log-empty');
+            if (empty) empty.remove();
             
             const entry = document.createElement('div');
             entry.className = 'roll-log-entry';
@@ -737,11 +748,10 @@
                 valueHtml = '<span class="roll-value roll-fail">' + result + ' 💀</span>';
             }
             
-            entry.innerHTML = `
-                <span class="roll-player">${player}</span>
-                <span class="roll-dice">d${sides}</span>
-                ${valueHtml}
-            `;
+            entry.innerHTML = 
+                '<span class="roll-player">' + player + '</span>' +
+                '<span class="roll-dice">d' + sides + '</span>' +
+                valueHtml;
             
             container.prepend(entry);
             
