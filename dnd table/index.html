@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DND Синхронная карта</title>
+    
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1e1e1e;
+            color: #eee;
+            text-align: center;
+            margin: 0;
+            padding: 10px;
+            touch-action: none;
+        }
+        h1 {
+            font-size: 22px;
+            margin: 10px 0;
+        }
+
+        /* ===== КАРТА ===== */
+        .map-wrapper {
+            position: relative;
+            max-width: 600px;
+            margin: 10px auto;
+            aspect-ratio: 10 / 6;
+            background-image: url('images/forest.jpg');
+            background-size: cover;
+            background-position: center;
+            border: 3px solid #555;
+            width: 95vw;
+            max-height: 70vh;
+            overflow: hidden;
+            touch-action: none;
+            transition: background-image 0.3s ease;
+        }
+
+        /* СЕТКА (полупрозрачная) */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .cell {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* ФИГУРКИ */
+        .tokens-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        .token {
+            position: absolute;
+            width: 12%;
+            height: 14%;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: grab;
+            touch-action: none;
+            text-shadow: 0 0 5px black;
+            transform: translate(-50%, -50%);
+            left: 0;
+            top: 0;
+            z-index: 10;
+        }
+        .token:active {
+            cursor: grabbing;
+            filter: brightness(1.3);
+            z-index: 20;
+        }
+
+        /* ===== КНОПКИ ===== */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .controls button {
+            background: #34495e;
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 30px;
+            font-size: 20px;
+            min-height: 50px;
+            min-width: 50px;
+            cursor: pointer;
+            touch-action: manipulation;
+            box-shadow: 0 3px 0 #1f2c38;
+            transition: 0.1s;
+        }
+        .controls button:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        .controls button.danger {
+            background: #c0392b;
+            box-shadow: 0 3px 0 #78281f;
+        }
+        .controls button.d20 {
+            background: #2980b9;
+            box-shadow: 0 3px 0 #1a5276;
+        }
+
+        /* ===== ВЫБОР КАРТЫ ===== */
+        .map-selector {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .map-selector button {
+            background: #2c3e50;
+            border: 2px solid #555;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            touch-action: manipulation;
+            min-height: 44px;
+        }
+        .map-selector button:hover {
+            background: #34495e;
+            border-color: #f1c40f;
+        }
+        .map-selector button:active {
+            transform: scale(0.95);
+        }
+        .map-selector button.active {
+            border-color: #f1c40f;
+            background: #34495e;
+        }
+
+        /* ===== КУБИКИ ===== */
+        .dice-area {
+            font-size: 48px;
+            background: #2a2a2a;
+            padding: 10px 25px;
+            display: inline-block;
+            border-radius: 20px;
+            margin: 5px 0;
+            min-width: 100px;
+        }
+        .log {
+            font-size: 18px;
+            color: #aaa;
+            min-height: 30px;
+        }
+
+        /* ===== ВЫБОР ИКОНОК ===== */
+        .icon-picker {
+            display: none;
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 15px;
+            margin: 5px auto;
+            max-width: 350px;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+            border: 2px solid #555;
+        }
+        .icon-picker.active {
+            display: flex;
+        }
+        .icon-picker button {
+            font-size: 30px;
+            background: #444;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 5px 12px;
+            min-height: 50px;
+            cursor: pointer;
+        }
+        .icon-picker button.selected {
+            border-color: #f1c40f;
+            background: #555;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 13px;
+            margin: 10px;
+        }
+        .player-id {
+            color: #888;
+            font-size: 14px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>⚔️ Поле боя</h1>
+    <div class="player-id" id="playerId">Загрузка...</div>
+
+    <!-- КАРТА -->
+    <div class="map-wrapper" id="mapWrapper">
+        <div class="grid" id="grid"></div>
+        <div class="tokens-layer" id="tokensLayer"></div>
+    </div>
+
+    <!-- ===== ВЫБОР КАРТЫ ===== -->
+    <div class="map-selector" id="mapSelector">
+        <button onclick="changeMap('forest')" class="active">🌲 Лес</button>
+        <button onclick="changeMap('dungeon')">🏚️ Подземелье</button>
+        <button onclick="changeMap('castle')">🏰 Замок</button>
+        <button onclick="changeMap('tavern')">🍺 Таверна</button>
+        <button onclick="changeMap('cave')">🕳️ Пещера</button>
+    </div>
+
+    <!-- КНОПКИ УПРАВЛЕНИЯ -->
+    <div class="controls">
+        <button onclick="showIconPicker()">➕ Добавить</button>
+        <button class="danger" onclick="clearTokens()">🗑️ Очистить</button>
+        <button class="d20" onclick="rollDice(20)">🎲 d20</button>
+        <button onclick="rollDice(6)">d6</button>
+    </div>
+
+    <!-- ВЫБОР ИКОНОК -->
+    <div class="icon-picker" id="iconPicker">
+        <button onclick="addToken('🧙‍♂️')">🧙‍♂️</button>
+        <button onclick="addToken('🏹')">🏹</button>
+        <button onclick="addToken('🗡️')">🗡️</button>
+        <button onclick="addToken('🛡️')">🛡️</button>
+        <button onclick="addToken('🐉')">🐉</button>
+        <button onclick="addToken('👹')">👹</button>
+        <button onclick="addToken('🧝')">🧝</button>
+        <button onclick="addToken('💀')">💀</button>
+        <button onclick="addToken('🐺')">🐺</button>
+        <button onclick="addToken('🧌')">🧌</button>
+        <button onclick="hideIconPicker()" style="background:#c0392b;">✖</button>
+    </div>
+
+    <!-- КУБИКИ -->
+    <div class="dice-area" id="diceDisplay">🎲</div>
+    <div class="log" id="log">Выбери карту и добавь персонажей!</div>
+    <div class="hint">👆 Перетащи фигурку. Все видят синхронно!</div>
+
+    <script>
+        // ============================================
+        // ТВОЙ КОНФИГ FIREBASE (ВСТАВЬ СВОЙ)
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfb0M7LS3nzPcabFuvekS815GvH1fUK_Q",
+            authDomain: "dnd-rubezhata.firebaseapp.com",
+            databaseURL: "https://dnd-rubezhata-default-rtdb.firebaseio.com",
+            projectId: "dnd-rubezhata",
+            storageBucket: "dnd-rubezhata.firebasestorage.app",
+            messagingSenderId: "67134397384",
+            appId: "1:67134397384:web:2d29685b1070abaaba3efd"
+        };
+        // ============================================
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const playerId = 'Player_' + Math.random().toString(36).substring(2, 6);
+        document.getElementById('playerId').textContent = '👤 ' + playerId;
+
+        // ========== СЕТКА ==========
+        const grid = document.getElementById('grid');
+        for (let i = 0; i < 60; i++) {
+            let cell = document.createElement('div');
+            cell.className = 'cell';
+            grid.appendChild(cell);
+        }
+
+        // ========== ТОКЕНЫ ==========
+        const tokensLayer = document.getElementById('tokensLayer');
+        let tokens = [];
+        let nextId = 1;
+        let draggedToken = null;
+        let dragOffsetX = 0, dragOffsetY = 0;
+        let isLocalUpdate = false;
+
+        function loadTokens() {
+            const tokensRef = db.ref('tokens');
+            tokensRef.on('value', (snapshot) => {
+                if (isLocalUpdate) return;
+                const data = snapshot.val();
+                if (data) {
+                    tokens = Object.values(data);
+                    nextId = tokens.reduce((max, t) => Math.max(max, t.id), 0) + 1;
+                } else {
+                    tokens = [];
+                }
+                renderTokens();
+            });
+        }
+
+        function saveTokens() {
+            isLocalUpdate = true;
+            const tokensRef = db.ref('tokens');
+            const data = {};
+            tokens.forEach(t => { data[t.id] = t; });
+            tokensRef.set(data).then(() => { isLocalUpdate = false; });
+        }
+
+        function renderTokens() {
+            tokensLayer.innerHTML = '';
+            tokens.forEach(token => {
+                const el = document.createElement('div');
+                el.className = 'token';
+                el.textContent = token.icon;
+                el.dataset.id = token.id;
+                el.style.left = token.x + '%';
+                el.style.top = token.y + '%';
+
+                el.addEventListener('dblclick', () => deleteToken(token.id));
+                el.addEventListener('touchstart', (e) => {
+                    const timer = setTimeout(() => {
+                        if (navigator.vibrate) navigator.vibrate(50);
+                        deleteToken(token.id);
+                    }, 800);
+                    el._timer = timer;
+                });
+                el.addEventListener('touchend', () => clearTimeout(el._timer));
+                el.addEventListener('touchmove', () => clearTimeout(el._timer));
+
+                el.addEventListener('mousedown', (e) => startDrag(e, token.id));
+                el.addEventListener('touchstart', (e) => startDrag(e, token.id), { passive: false });
+
+                tokensLayer.appendChild(el);
+            });
+        }
+
+        function deleteToken(id) {
+            tokens = tokens.filter(t => t.id !== id);
+            saveTokens();
+            document.getElementById('log').textContent = '🗑️ Удалён персонаж';
+        }
+
+        function addToken(icon) {
+            const token = { id: nextId++, icon: icon, x: 50, y: 50 };
+            tokens.push(token);
+            saveTokens();
+            hideIconPicker();
+            if (navigator.vibrate) navigator.vibrate(20);
+            document.getElementById('log').textContent = '➕ Добавлен ' + icon;
+        }
+
+        function clearTokens() {
+            if (tokens.length === 0) return;
+            if (confirm('Удалить всех персонажей?')) {
+                tokens = [];
+                saveTokens();
+                document.getElementById('log').textContent = '🗑️ Все удалены';
+            }
+        }
+
+        function showIconPicker() {
+            document.getElementById('iconPicker').classList.add('active');
+        }
+
+        function hideIconPicker() {
+            document.getElementById('iconPicker').classList.remove('active');
+        }
+
+        // ========== ПЕРЕТАСКИВАНИЕ ==========
+        function startDrag(e, tokenId) {
+            e.preventDefault();
+            const token = tokens.find(t => t.id === tokenId);
+            if (!token) return;
+
+            const rect = document.getElementById('mapWrapper').getBoundingClientRect();
+            let clientX, clientY;
+            if (e.type === 'touchstart') {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const tokenX = (clientX - rect.left) / rect.width * 100;
+            const tokenY = (clientY - rect.top) / rect.height * 100;
+            dragOffsetX = tokenX - token.x;
+            dragOffsetY = tokenY - token.y;
+            draggedToken = token;
+
+            window.addEventListener('mousemove', onDrag);
+            window.addEventListener('mouseup', endDrag);
+            window.addEventListener('touchmove', onDrag, { passive: false });
+            window.addEventListener('touchend', endDrag, { passive: false });
+        }
+
+        function onDrag(e) {
+            if (!draggedToken) return;
+            e.preventDefault();
+            const rect = document.getElementById('mapWrapper').getBoundingClientRect();
+            let clientX, clientY;
+            if (e.type === 'touchmove') {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            let newX = (clientX - rect.left) / rect.width * 100 - dragOffsetX;
+            let newY = (clientY - rect.top) / rect.height * 100 - dragOffsetY;
+            newX = Math.max(5, Math.min(95, newX));
+            newY = Math.max(5, Math.min(95, newY));
+
+            draggedToken.x = newX;
+            draggedToken.y = newY;
+
+            const el = tokensLayer.querySelector(`[data-id="${draggedToken.id}"]`);
+            if (el) {
+                el.style.left = newX + '%';
+                el.style.top = newY + '%';
+            }
+        }
+
+        function endDrag(e) {
+            if (draggedToken) {
+                saveTokens();
+                draggedToken = null;
+            }
+            window.removeEventListener('mousemove', onDrag);
+            window.removeEventListener('mouseup', endDrag);
+            window.removeEventListener('touchmove', onDrag);
+            window.removeEventListener('touchend', endDrag);
+        }
+
+        // ========== СМЕНА КАРТЫ ==========
+        function changeMap(mapName) {
+            const map = document.getElementById('mapWrapper');
+            map.style.backgroundImage = `url('images/${mapName}.jpg')`;
+            document.getElementById('log').textContent = `🗺️ Карта: ${mapName}`;
+            if (navigator.vibrate) navigator.vibrate(20);
+
+            // Подсвечиваем активную кнопку
+            document.querySelectorAll('.map-selector button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // Находим кнопку с нужной картой и подсвечиваем
+            const buttons = document.querySelectorAll('.map-selector button');
+            const mapNames = ['forest', 'dungeon', 'castle', 'tavern', 'cave'];
+            const index = mapNames.indexOf(mapName);
+            if (index !== -1 && buttons[index]) {
+                buttons[index].classList.add('active');
+            }
+        }
+
+        // ========== КУБИКИ ==========
+        function rollDice(sides) {
+            let result = Math.floor(Math.random() * sides) + 1;
+            let display = document.getElementById('diceDisplay');
+            let log = document.getElementById('log');
+
+            display.textContent = '⏳';
+            setTimeout(() => {
+                display.textContent = '🎲 ' + result;
+                let msg = 'd' + sides + ': ' + result;
+                if (sides === 20 && result === 20) msg += ' 🔥 КРИТ!';
+                if (sides === 20 && result === 1) msg += ' 💀 ПРОВАЛ!';
+                log.textContent = msg;
+                if (navigator.vibrate) navigator.vibrate(30);
+            }, 200);
+        }
+
+        // ========== ЗАПУСК ==========
+        loadTokens();
+    </script>
+</body>
+</html>
