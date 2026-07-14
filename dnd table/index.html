@@ -22,8 +22,7 @@
             text-align: center;
             margin: 0;
             padding: 10px;
-            touch-action: none;
-            padding-bottom: 20px;
+            padding-bottom: 30px;
         }
         h1 {
             font-size: 22px;
@@ -202,6 +201,19 @@
             background: #2980b9;
             box-shadow: 0 3px 0 #1a5276;
         }
+        .controls button.gm-btn {
+            background: #8e44ad;
+            box-shadow: 0 3px 0 #6c3483;
+        }
+        .controls button.gm-btn.active {
+            background: #f1c40f;
+            color: #1e1e1e;
+            box-shadow: 0 3px 0 #d4ac0d;
+        }
+        .controls button.change-name-btn {
+            background: #27ae60;
+            box-shadow: 0 3px 0 #1e8449;
+        }
 
         .map-selector {
             display: flex;
@@ -232,6 +244,11 @@
         .map-selector button.active {
             border-color: #f1c40f;
             background: #34495e;
+        }
+        .map-selector button.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
         .dice-area {
@@ -275,7 +292,7 @@
             cursor: pointer;
         }
 
-        /* ===== ЛОГ БРОСКОВ (внизу страницы) ===== */
+        /* ===== ЛОГ БРОСКОВ ===== */
         .roll-log-container {
             max-width: 600px;
             margin: 15px auto 0 auto;
@@ -287,6 +304,7 @@
             width: 95vw;
             max-height: 180px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .roll-log-container::-webkit-scrollbar {
             width: 4px;
@@ -374,7 +392,7 @@
             100% { transform: scale(1); }
         }
 
-        /* ===== ТОСТ (маленькое уведомление) ===== */
+        /* ===== ТОСТ ===== */
         .roll-toast {
             position: fixed;
             bottom: 20px;
@@ -413,6 +431,11 @@
             margin: 5px;
             font-weight: bold;
         }
+        .gm-indicator {
+            color: #8e44ad;
+            font-size: 14px;
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
@@ -430,6 +453,7 @@
     </div>
 
     <div class="player-id" id="playerId">Загрузка...</div>
+    <div class="gm-indicator" id="gmIndicator"></div>
 
     <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
@@ -438,12 +462,12 @@
     </div>
 
     <!-- ===== ВЫБОР КАРТЫ ===== -->
-    <div class="map-selector">
-        <button onclick="changeMap('forest')" class="active">🌲 Лес</button>
-        <button onclick="changeMap('dungeon')">🏚️ Подземелье</button>
-        <button onclick="changeMap('castle')">🏰 Замок</button>
-        <button onclick="changeMap('tavern')">🍺 Таверна</button>
-        <button onclick="changeMap('cave')">🕳️ Пещера</button>
+    <div class="map-selector" id="mapSelector">
+        <button onclick="changeMap('forest')" data-map="forest" class="active">🌲 Лес</button>
+        <button onclick="changeMap('dungeon')" data-map="dungeon">🏚️ Подземелье</button>
+        <button onclick="changeMap('castle')" data-map="castle">🏰 Замок</button>
+        <button onclick="changeMap('tavern')" data-map="tavern">🍺 Таверна</button>
+        <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
     </div>
 
     <!-- ===== КНОПКИ ===== -->
@@ -456,6 +480,8 @@
         <button onclick="rollDice(10)">d10</button>
         <button onclick="rollDice(12)">d12</button>
         <button onclick="rollDice(100)">d100</button>
+        <button class="gm-btn" id="gmToggleBtn" onclick="toggleGM()">👑 GM</button>
+        <button class="change-name-btn" onclick="showChangeName()">✏️ Сменить ник</button>
     </div>
 
     <!-- ===== ВЫБОР ИКОНОК ===== -->
@@ -477,7 +503,7 @@
     <div class="dice-area" id="diceDisplay">🎲</div>
     <div class="log" id="log">Добро пожаловать!</div>
 
-    <!-- ===== ЛОГ БРОСКОВ (внизу страницы) ===== -->
+    <!-- ===== ЛОГ БРОСКОВ ===== -->
     <div class="roll-log-container" id="rollLogContainer">
         <div class="roll-log-title">📜 История бросков</div>
         <div id="rollLogEntries">
@@ -506,11 +532,23 @@
         const db = firebase.database();
 
         // ============================================
-        // РАБОТА С НИКОМ
+        // РАБОТА С НИКОМ И GM
         // ============================================
+        const GM_PASSWORD = 'gm123';
+        let isGM = false;
         let playerName = localStorage.getItem('dnd_player_name') || '';
         const randomId = 'Player_' + Math.random().toString(36).substring(2, 6);
         let displayName = playerName || randomId;
+
+        // Показываем окно ввода ника, если его нет
+        if (!playerName) {
+            document.getElementById('nicknameContainer').classList.remove('hidden');
+            document.getElementById('log').textContent = '👋 Введи свой ник!';
+        } else {
+            document.getElementById('nicknameContainer').classList.add('hidden');
+            document.getElementById('playerId').textContent = '👤 ' + displayName;
+            document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
+        }
 
         function saveNickname() {
             const input = document.getElementById('nicknameInput');
@@ -538,11 +576,115 @@
             document.getElementById('log').textContent = '👋 Играем без ника';
         }
 
-        if (playerName) {
-            displayName = playerName;
-            document.getElementById('nicknameContainer').classList.add('hidden');
+        function showChangeName() {
+            const newName = prompt('✏️ Введи новый ник:', displayName);
+            if (newName === null) return;
+            const trimmed = newName.trim();
+            if (trimmed.length === 0) {
+                alert('❌ Ник не может быть пустым!');
+                return;
+            }
+            if (trimmed.length > 20) {
+                alert('❌ Ник не может быть длиннее 20 символов!');
+                return;
+            }
+            playerName = trimmed;
+            displayName = trimmed;
+            localStorage.setItem('dnd_player_name', trimmed);
             document.getElementById('playerId').textContent = '👤 ' + displayName;
+            document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
         }
+
+        // ========== GM ==========
+        function toggleGM() {
+            if (isGM) {
+                isGM = false;
+                document.getElementById('gmIndicator').textContent = '';
+                document.getElementById('gmToggleBtn').classList.remove('active');
+                document.getElementById('log').textContent = '👑 Режим GM выключен';
+                updateMapButtons();
+                return;
+            }
+
+            const password = prompt('👑 Введите пароль GM:');
+            if (password === null) return;
+            if (password === GM_PASSWORD) {
+                isGM = true;
+                document.getElementById('gmIndicator').textContent = '👑 РЕЖИМ GM ВКЛЮЧЕН';
+                document.getElementById('gmIndicator').style.color = '#f1c40f';
+                document.getElementById('gmToggleBtn').classList.add('active');
+                document.getElementById('log').textContent = '👑 Режим GM включен!';
+                updateMapButtons();
+            } else {
+                alert('❌ Неверный пароль!');
+            }
+        }
+
+        // ========== СИНХРОНИЗАЦИЯ КАРТЫ ==========
+        let currentMap = 'forest';
+        let isLocalMapUpdate = false;
+
+        // Слушаем изменения карты в Firebase
+        const mapRef = db.ref('currentMap');
+        mapRef.on('value', function(snapshot) {
+            if (isLocalMapUpdate) return;
+            const mapName = snapshot.val();
+            if (mapName && mapName !== currentMap) {
+                currentMap = mapName;
+                updateMapUI(mapName);
+            }
+        });
+
+        function changeMap(mapName) {
+            if (!isGM) {
+                document.getElementById('log').textContent = '⛔ Только GM может менять карту!';
+                return;
+            }
+
+            isLocalMapUpdate = true;
+            currentMap = mapName;
+            mapRef.set(mapName).then(() => {
+                isLocalMapUpdate = false;
+            });
+            updateMapUI(mapName);
+            document.getElementById('log').textContent = '🗺️ Карта: ' + mapName;
+            if (navigator.vibrate) navigator.vibrate(20);
+        }
+
+        function updateMapUI(mapName) {
+            const map = document.getElementById('mapWrapper');
+            map.style.backgroundImage = 'url(\'images/' + mapName + '.jpg\')';
+
+            document.querySelectorAll('.map-selector button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const buttons = document.querySelectorAll('.map-selector button');
+            const mapNames = ['forest', 'dungeon', 'castle', 'tavern', 'cave'];
+            const index = mapNames.indexOf(mapName);
+            if (index !== -1 && buttons[index]) {
+                buttons[index].classList.add('active');
+            }
+        }
+
+        function updateMapButtons() {
+            document.querySelectorAll('.map-selector button').forEach(btn => {
+                if (isGM) {
+                    btn.classList.remove('disabled');
+                } else {
+                    btn.classList.add('disabled');
+                }
+            });
+        }
+
+        // Инициализация: загружаем текущую карту из Firebase
+        mapRef.once('value', function(snapshot) {
+            const mapName = snapshot.val();
+            if (mapName) {
+                currentMap = mapName;
+                updateMapUI(mapName);
+            }
+            updateMapButtons();
+        });
 
         // ========== СЕТКА ==========
         const grid = document.getElementById('grid');
@@ -710,31 +852,12 @@
             window.removeEventListener('touchend', endDrag);
         }
 
-        // ========== СМЕНА КАРТЫ ==========
-        function changeMap(mapName) {
-            const map = document.getElementById('mapWrapper');
-            map.style.backgroundImage = 'url(\'images/' + mapName + '.jpg\')';
-            document.getElementById('log').textContent = '🗺️ Карта: ' + mapName;
-            if (navigator.vibrate) navigator.vibrate(20);
-
-            document.querySelectorAll('.map-selector button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            const buttons = document.querySelectorAll('.map-selector button');
-            const mapNames = ['forest', 'dungeon', 'castle', 'tavern', 'cave'];
-            const index = mapNames.indexOf(mapName);
-            if (index !== -1 && buttons[index]) {
-                buttons[index].classList.add('active');
-            }
-        }
-
         // ========== ЛОГ БРОСКОВ ==========
         const MAX_LOG_ENTRIES = 12;
 
         function addLogEntry(player, sides, result) {
             const container = document.getElementById('rollLogEntries');
             
-            // Удаляем заглушку
             const empty = container.querySelector('.roll-log-empty');
             if (empty) empty.remove();
             
@@ -828,10 +951,6 @@
 
         // ========== ЗАПУСК ==========
         loadTokens();
-
-        if (!playerName) {
-            document.getElementById('log').textContent = '👋 Введи свой ник!';
-        }
     </script>
 </body>
 </html>
