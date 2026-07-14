@@ -29,6 +29,78 @@
             margin: 10px 0;
         }
 
+        /* ===== ВВОД НИКА ===== */
+        .nickname-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+        .nickname-container.hidden {
+            display: none;
+        }
+        .nickname-box {
+            background: #2a2a2a;
+            padding: 30px 40px;
+            border-radius: 20px;
+            border: 2px solid #f1c40f;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .nickname-box label {
+            display: block;
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #eee;
+        }
+        .nickname-box input {
+            width: 100%;
+            padding: 12px;
+            font-size: 20px;
+            border-radius: 10px;
+            border: 2px solid #555;
+            background: #1e1e1e;
+            color: #fff;
+            margin-bottom: 15px;
+            text-align: center;
+            outline: none;
+        }
+        .nickname-box input:focus {
+            border-color: #f1c40f;
+        }
+        .nickname-box button {
+            background: #2980b9;
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin: 5px;
+            min-height: 48px;
+        }
+        .nickname-box button:hover {
+            background: #3498db;
+        }
+        .nickname-box button:active {
+            transform: scale(0.95);
+        }
+        .nickname-box .skip-btn {
+            background: #555;
+        }
+        .nickname-box .skip-btn:hover {
+            background: #777;
+        }
+
         /* ===== КАРТА ===== */
         .map-wrapper {
             position: relative;
@@ -46,7 +118,7 @@
             transition: background-image 0.3s ease;
         }
 
-        /* СЕТКА (полупрозрачная) */
+        /* СЕТКА */
         .grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
@@ -59,7 +131,7 @@
             pointer-events: none;
         }
         .cell {
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             background: rgba(0, 0, 0, 0.05);
         }
 
@@ -90,6 +162,7 @@
             left: 0;
             top: 0;
             z-index: 10;
+            transition: filter 0.2s;
         }
         .token:active {
             cursor: grabbing;
@@ -178,6 +251,7 @@
             font-size: 18px;
             color: #aaa;
             min-height: 30px;
+            padding: 10px;
         }
 
         /* ===== ВЫБОР ИКОНОК ===== */
@@ -210,24 +284,70 @@
             background: #555;
         }
 
+        /* ===== УВЕДОМЛЕНИЕ О БРОСКЕ ===== */
+        .roll-notification {
+            position: fixed;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.92);
+            color: #fff;
+            padding: 20px 30px;
+            border-radius: 20px;
+            font-size: 26px;
+            font-weight: bold;
+            border: 3px solid #f1c40f;
+            z-index: 1000;
+            text-align: center;
+            animation: fadeInOut 3.5s ease forwards;
+            pointer-events: none;
+            max-width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+        .roll-notification .sub {
+            font-size: 16px;
+            color: #aaa;
+            margin-top: 5px;
+            font-weight: normal;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+            15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
         .hint {
             color: #666;
             font-size: 13px;
             margin: 10px;
         }
         .player-id {
-            color: #888;
-            font-size: 14px;
+            color: #f1c40f;
+            font-size: 16px;
             margin: 5px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
     <h1>⚔️ Поле боя</h1>
+
+    <!-- ===== ВВОД НИКА ===== -->
+    <div class="nickname-container" id="nicknameContainer">
+        <div class="nickname-box">
+            <label for="nicknameInput">👤 Введи свой ник:</label>
+            <input type="text" id="nicknameInput" placeholder="Например: Гэндальф" maxlength="20">
+            <button onclick="saveNickname()">✅ Сохранить</button>
+            <button onclick="skipNickname()" class="skip-btn">Пропустить</button>
+        </div>
+    </div>
+
+    <!-- ===== ИГРОК ===== -->
     <div class="player-id" id="playerId">Загрузка...</div>
 
-    <!-- КАРТА -->
+    <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="grid" id="grid"></div>
         <div class="tokens-layer" id="tokensLayer"></div>
@@ -242,15 +362,19 @@
         <button onclick="changeMap('cave')">🕳️ Пещера</button>
     </div>
 
-    <!-- КНОПКИ УПРАВЛЕНИЯ -->
+    <!-- ===== КНОПКИ УПРАВЛЕНИЯ ===== -->
     <div class="controls">
         <button onclick="showIconPicker()">➕ Добавить</button>
         <button class="danger" onclick="clearTokens()">🗑️ Очистить</button>
         <button class="d20" onclick="rollDice(20)">🎲 d20</button>
         <button onclick="rollDice(6)">d6</button>
+        <button onclick="rollDice(8)">d8</button>
+        <button onclick="rollDice(10)">d10</button>
+        <button onclick="rollDice(12)">d12</button>
+        <button onclick="rollDice(100)">d100</button>
     </div>
 
-    <!-- ВЫБОР ИКОНОК -->
+    <!-- ===== ВЫБОР ИКОНОК ===== -->
     <div class="icon-picker" id="iconPicker">
         <button onclick="addToken('🧙‍♂️')">🧙‍♂️</button>
         <button onclick="addToken('🏹')">🏹</button>
@@ -265,14 +389,14 @@
         <button onclick="hideIconPicker()" style="background:#c0392b;">✖</button>
     </div>
 
-    <!-- КУБИКИ -->
+    <!-- ===== КУБИКИ ===== -->
     <div class="dice-area" id="diceDisplay">🎲</div>
-    <div class="log" id="log">Выбери карту и добавь персонажей!</div>
+    <div class="log" id="log">Добро пожаловать!</div>
     <div class="hint">👆 Перетащи фигурку. Все видят синхронно!</div>
 
     <script>
         // ============================================
-        // ТВОЙ КОНФИГ FIREBASE (ВСТАВЬ СВОЙ)
+        // ТВОЙ КОНФИГ FIREBASE
         // ============================================
         const firebaseConfig = {
             apiKey: "AIzaSyCfb0M7LS3nzPcabFuvekS815GvH1fUK_Q",
@@ -288,8 +412,44 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const playerId = 'Player_' + Math.random().toString(36).substring(2, 6);
-        document.getElementById('playerId').textContent = '👤 ' + playerId;
+        // ============================================
+        // РАБОТА С НИКОМ
+        // ============================================
+        let playerName = localStorage.getItem('dnd_player_name') || '';
+        const randomId = 'Player_' + Math.random().toString(36).substring(2, 6);
+        let displayName = playerName || randomId;
+
+        function saveNickname() {
+            const input = document.getElementById('nicknameInput');
+            const name = input.value.trim();
+            if (name.length === 0) {
+                alert('❌ Введи хотя бы один символ!');
+                return;
+            }
+            if (name.length > 20) {
+                alert('❌ Ник не может быть длиннее 20 символов!');
+                return;
+            }
+            playerName = name;
+            displayName = name;
+            localStorage.setItem('dnd_player_name', name);
+            document.getElementById('nicknameContainer').classList.add('hidden');
+            document.getElementById('playerId').textContent = '👤 ' + displayName;
+            document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
+        }
+
+        function skipNickname() {
+            displayName = randomId;
+            document.getElementById('nicknameContainer').classList.add('hidden');
+            document.getElementById('playerId').textContent = '👤 ' + displayName;
+            document.getElementById('log').textContent = '👋 Играем без ника';
+        }
+
+        if (playerName) {
+            displayName = playerName;
+            document.getElementById('nicknameContainer').classList.add('hidden');
+            document.getElementById('playerId').textContent = '👤 ' + displayName;
+        }
 
         // ========== СЕТКА ==========
         const grid = document.getElementById('grid');
@@ -464,11 +624,9 @@
             document.getElementById('log').textContent = `🗺️ Карта: ${mapName}`;
             if (navigator.vibrate) navigator.vibrate(20);
 
-            // Подсвечиваем активную кнопку
             document.querySelectorAll('.map-selector button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            // Находим кнопку с нужной картой и подсвечиваем
             const buttons = document.querySelectorAll('.map-selector button');
             const mapNames = ['forest', 'dungeon', 'castle', 'tavern', 'cave'];
             const index = mapNames.indexOf(mapName);
@@ -477,25 +635,72 @@
             }
         }
 
-        // ========== КУБИКИ ==========
+        // ========== ПОКАЗ УВЕДОМЛЕНИЯ О БРОСКЕ ==========
+        function showRollNotification(msg) {
+            const oldNotifications = document.querySelectorAll('.roll-notification');
+            oldNotifications.forEach(el => el.remove());
+
+            const div = document.createElement('div');
+            div.className = 'roll-notification';
+            div.innerHTML = msg;
+            document.body.appendChild(div);
+
+            setTimeout(() => {
+                div.remove();
+            }, 3500);
+        }
+
+        // ========== КУБИКИ (ОБНОВЛЁННЫЕ) ==========
         function rollDice(sides) {
             let result = Math.floor(Math.random() * sides) + 1;
-            let display = document.getElementById('diceDisplay');
-            let log = document.getElementById('log');
 
+            let msg = '🎲 ' + displayName + ' кинул d' + sides + ': ' + result;
+            if (sides === 20 && result === 20) msg += ' 🔥 КРИТ!';
+            if (sides === 20 && result === 1) msg += ' 💀 ПРОВАЛ!';
+
+            let display = document.getElementById('diceDisplay');
             display.textContent = '⏳';
+
+            const rollRef = db.ref('rolls');
+            rollRef.push({
+                player: displayName,
+                sides: sides,
+                result: result,
+                msg: msg,
+                timestamp: Date.now()
+            });
+
             setTimeout(() => {
                 display.textContent = '🎲 ' + result;
-                let msg = 'd' + sides + ': ' + result;
-                if (sides === 20 && result === 20) msg += ' 🔥 КРИТ!';
-                if (sides === 20 && result === 1) msg += ' 💀 ПРОВАЛ!';
-                log.textContent = msg;
-                if (navigator.vibrate) navigator.vibrate(30);
+                document.getElementById('log').textContent = 'Твой бросок: ' + result;
             }, 200);
         }
 
+        // ========== СЛУШАЕМ БРОСКИ ДРУГИХ ==========
+        const rollRef = db.ref('rolls');
+        rollRef.limitToLast(1).on('child_added', function(snapshot) {
+            const data = snapshot.val();
+            if (data.player === displayName) return;
+
+            document.getElementById('log').textContent = data.msg;
+
+            const display = document.getElementById('diceDisplay');
+            display.textContent = '⏳';
+            setTimeout(() => {
+                display.textContent = '🎲 ' + data.result;
+            }, 200);
+
+            showRollNotification(data.msg);
+        });
+
         // ========== ЗАПУСК ==========
         loadTokens();
+
+        // Если ник не введён — показываем окно
+        if (!playerName) {
+            // Окно уже показано по умолчанию
+            document.getElementById('log').textContent = '👋 Введи свой ник!';
+        }
     </script>
 </body>
 </html>
