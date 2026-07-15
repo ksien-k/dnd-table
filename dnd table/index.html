@@ -79,6 +79,7 @@
         .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
         .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
+        /* ===== КАРТА ===== */
         .map-wrapper {
             position: relative; width: 100%; max-width: 800px; margin: 0 auto;
             aspect-ratio: 16 / 10; background: #1a1a1a; overflow: hidden;
@@ -101,7 +102,7 @@
             background: #1a1a1a; pointer-events: none;
         }
 
-        /* ===== СЕТКА — поверх картинки, строго по её границам ===== */
+        /* ===== СЕТКА — НА КАРТИНКЕ, А НЕ НА КОНТЕЙНЕРЕ ===== */
         .grid-overlay {
             position: absolute;
             top: 0; left: 0;
@@ -286,10 +287,12 @@
         <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
     </div>
 
+    <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="map-inner" id="mapInner">
             <div class="map-image-container" id="mapImageContainer">
                 <img class="map-image" id="mapImage" src="images/forest.jpg" alt="Карта">
+                <!-- СЕТКА ВНУТРИ КОНТЕЙНЕРА С КАРТИНКОЙ -->
                 <div class="grid-overlay" id="gridOverlay"></div>
                 <div class="tokens-layer" id="tokensLayer"></div>
             </div>
@@ -356,7 +359,7 @@
         const db = firebase.database();
 
         // ============================================
-        // НИК И GM
+        // НИК И GM (пароль 123)
         // ============================================
         const GM_PASSWORD = '123';
         let isGM = false;
@@ -430,7 +433,7 @@
         }
 
         // ============================================
-        // КАРТА — ЗУМ И ПАН
+        // КАРТА — ЗУМ И ПАН (С РЕАЛЬНЫМИ ГРАНИЦАМИ)
         // ============================================
         let scale = 1;
         let panX = 0;
@@ -444,10 +447,34 @@
         const mapImage = document.getElementById('mapImage');
         const zoomLabel = document.getElementById('zoomLabel');
 
+        // Вычисляем реальные границы карты
+        function getMapBounds() {
+            const containerW = mapWrapper.clientWidth;
+            const containerH = mapWrapper.clientHeight;
+            
+            // Получаем реальные размеры картинки
+            const imgW = mapImage.naturalWidth || containerW;
+            const imgH = mapImage.naturalHeight || containerH;
+            
+            // Размер картинки с учётом object-fit: contain
+            const scaleX = containerW / imgW;
+            const scaleY = containerH / imgH;
+            const fitScale = Math.min(scaleX, scaleY);
+            
+            const displayW = imgW * fitScale * scale;
+            const displayH = imgH * fitScale * scale;
+            
+            // Максимальное смещение, чтобы карта не выходила за границы
+            const maxPanX = Math.max(0, (displayW - containerW) / 2);
+            const maxPanY = Math.max(0, (displayH - containerH) / 2);
+            
+            return { maxPanX, maxPanY };
+        }
+
         function clampPan() {
-            const maxPan = 500;
-            panX = Math.max(-maxPan, Math.min(maxPan, panX));
-            panY = Math.max(-maxPan, Math.min(maxPan, panY));
+            const bounds = getMapBounds();
+            panX = Math.max(-bounds.maxPanX, Math.min(bounds.maxPanX, panX));
+            panY = Math.max(-bounds.maxPanY, Math.min(bounds.maxPanY, panY));
         }
 
         function updateTransform() {
@@ -461,6 +488,7 @@
         function zoomOut() { scale = Math.max(0.3, scale - 0.15); updateTransform(); }
         function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
+        // ===== МЫШЬ =====
         mapWrapper.addEventListener('mousedown', function(e) {
             if (e.target.closest('.token')) return;
             isDraggingMap = true;
@@ -479,6 +507,7 @@
             mapWrapper.style.cursor = 'grab';
         });
 
+        // ===== TOUCH =====
         mapWrapper.addEventListener('touchstart', function(e) {
             if (e.target.closest('.token')) return;
             if (e.touches.length === 1) {
@@ -614,7 +643,7 @@
         }
 
         // ============================================
-        // ФИГУРКИ (исправлено: не теряются при обновлении)
+        // ФИГУРКИ (сохраняются в Firebase)
         // ============================================
         const tokensLayer = document.getElementById('tokensLayer');
         let tokens = {};
@@ -622,7 +651,6 @@
         let draggedToken = null;
         let dragOffsetX = 0, dragOffsetY = 0;
         let isLocalUpdate = false;
-        let isFirstLoad = true;
 
         function getSnappedPosition(x, y) {
             if (!snapEnabled) return { x, y };
@@ -648,8 +676,9 @@
 
         const tokensRef = db.ref('tokens');
 
-        // ===== ЗАГРУЗКА — ОДИН РАЗ =====
-        tokensRef.once('value', function(snapshot) {
+        // ===== ЗАГРУЗКА — используем on('value') для полной синхронизации =====
+        tokensRef.on('value', function(snapshot) {
+            if (isLocalUpdate) return;
             const data = snapshot.val();
             if (data) {
                 tokens = data;
@@ -657,38 +686,11 @@
                     const numId = parseInt(id);
                     if (numId >= nextId) nextId = numId + 1;
                 });
-                renderTokens();
-                setTimeout(updateTokenSizes, 50);
+            } else {
+                tokens = {};
             }
-            isFirstLoad = false;
-        });
-
-        // ===== СЛУШАЕМ НОВЫХ ПЕРСОНАЖЕЙ =====
-        tokensRef.on('child_added', function(snapshot) {
-            if (isLocalUpdate) return;
-            const id = parseInt(snapshot.key);
-            const data = snapshot.val();
-            // Проверяем, что такого ID ещё нет (чтобы не дублировать при первом рендере)
-            if (!tokens[id]) {
-                tokens[id] = data;
-                renderToken(id);
-            }
-        });
-
-        tokensRef.on('child_changed', function(snapshot) {
-            if (isLocalUpdate) return;
-            const id = parseInt(snapshot.key);
-            const data = snapshot.val();
-            tokens[id] = data;
-            renderToken(id);
-        });
-
-        tokensRef.on('child_removed', function(snapshot) {
-            if (isLocalUpdate) return;
-            const id = parseInt(snapshot.key);
-            delete tokens[id];
-            const el = tokensLayer.querySelector(`[data-id="${id}"]`);
-            if (el) el.remove();
+            renderTokens();
+            setTimeout(updateTokenSizes, 50);
         });
 
         function renderToken(id) {
@@ -758,7 +760,6 @@
             const id = nextId++;
             const tokenData = { icon: icon, x: pos.x, y: pos.y };
             
-            // Сохраняем в Firebase
             isLocalUpdate = true;
             tokensRef.child(id).set(tokenData).then(() => {
                 isLocalUpdate = false;
