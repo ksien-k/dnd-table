@@ -63,11 +63,14 @@
         .map-wrapper:active { cursor: grabbing; }
         .map-viewport {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            transform-origin: 0 0; will-change: transform; touch-action: none;
+            transform-origin: center center;
+            will-change: transform; touch-action: none;
+            display: flex; align-items: center; justify-content: center;
         }
         .map-content {
-            position: relative; width: 100%; height: 100%;
+            position: relative;
             display: flex; align-items: center; justify-content: center;
+            width: 100%; height: 100%;
         }
         .map-image {
             width: 100%; height: 100%; object-fit: contain; display: block;
@@ -130,7 +133,6 @@
         }
         .map-controls input[type="number"]:focus { border-color: #f1c40f; outline: none; }
         .map-controls .grid-label { color: #888; font-size: 12px; }
-        .map-controls .grid-size-label { color: #aaa; font-size: 13px; min-width: 50px; }
 
         .dice-controls {
             display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
@@ -373,23 +375,14 @@
         const mapImage = document.getElementById('mapImage');
         const zoomLabel = document.getElementById('zoomLabel');
 
-        function getBounds() {
-            const cw = wrapper.clientWidth, ch = wrapper.clientHeight;
-            const iw = mapImage.naturalWidth || cw, ih = mapImage.naturalHeight || ch;
-            const sx = cw / iw, sy = ch / ih, fit = Math.min(sx, sy);
-            const dw = iw * fit * scale, dh = ih * fit * scale;
-            return { maxX: Math.max(0, (dw - cw) / 2), maxY: Math.max(0, (dh - ch) / 2) };
-        }
-
-        function clampPan() {
-            const b = getBounds();
-            panX = Math.max(-b.maxX, Math.min(b.maxX, panX));
-            panY = Math.max(-b.maxY, Math.min(b.maxY, panY));
-        }
-
+        // Центрируем viewport при зуме
         function updateTransform() {
-            clampPan();
-            viewport.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
+            const w = wrapper.clientWidth;
+            const h = wrapper.clientHeight;
+            // Смещаем так, чтобы масштабирование шло от центра
+            const tx = (w / 2) * (1 - scale) + panX;
+            const ty = (h / 2) * (1 - scale) + panY;
+            viewport.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
             zoomLabel.textContent = Math.round(scale * 100) + '%';
             updateTokenSizes();
         }
@@ -441,14 +434,13 @@
         wrapper.addEventListener('touchend', () => { isDragging = false; lastTouchDist = 0; }, { passive: true });
         window.addEventListener('resize', updateTransform);
 
-        // ==================== СЕТКА (ручной ввод) ====================
+        // ==================== СЕТКА ====================
         let snapEnabled = true, gridVisible = true;
         let gridCols = 10, gridRows = 6;
         const gridOverlay = document.getElementById('gridOverlay');
         const gridColsInput = document.getElementById('gridColsInput');
         const gridRowsInput = document.getElementById('gridRowsInput');
 
-        // Загружаем сохранённый размер сетки из Firebase
         const gridSizeRef = db.ref('gridSize');
         gridSizeRef.on('value', (snap) => {
             const data = snap.val();
@@ -501,7 +493,6 @@
             document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
         }
 
-        // По нажатию Enter в полях ввода
         gridColsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyGridSize(); });
         gridRowsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyGridSize(); });
 
