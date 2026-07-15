@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -401,7 +400,7 @@
             updateMapButtons();
         }
 
-        // ==================== КАРТА: ZOOM / PAN (зум работает у всех) ====================
+        // ==================== КАРТА: ZOOM / PAN ====================
         let scale = 1, panX = 0, panY = 0;
         let isDragging = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
         const wrapper = document.getElementById('mapWrapper');
@@ -419,15 +418,13 @@
             updateTokenSizes();
         }
 
-        // Зум доступен ВСЕМ!
         function zoomIn() { scale = Math.min(5, scale + 0.15); updateTransform(); }
         function zoomOut() { scale = Math.max(0.2, scale - 0.15); updateTransform(); }
         function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
-        // Панорамирование доступно ВСЕМ! (но только если GM включил, иначе просто смотрят)
         wrapper.addEventListener('mousedown', (e) => {
             if (e.target.closest('.token')) return;
-            if (!isGM) return; // только GM может двигать карту
+            if (!isGM) return;
             isDragging = true;
             startX = e.clientX; startY = e.clientY;
             startPanX = panX; startPanY = panY;
@@ -450,14 +447,16 @@
                 startPanX = panX; startPanY = panY;
             }
         }, { passive: true });
+
         wrapper.addEventListener('touchmove', (e) => {
+            // Панорамирование одним пальцем (только GM)
             if (e.touches.length === 1 && isDragging) {
                 panX = startPanX + (e.touches[0].clientX - startX);
                 panY = startPanY + (e.touches[0].clientY - startY);
                 updateTransform();
             }
+            // ЗУМ ДВУМЯ ПАЛЬЦАМИ — ДЛЯ ВСЕХ!
             if (e.touches.length === 2) {
-                if (!isGM) return;
                 const t1 = e.touches[0], t2 = e.touches[1];
                 const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
                 if (lastTouchDist > 0) {
@@ -468,6 +467,7 @@
                 e.preventDefault();
             }
         }, { passive: false });
+
         wrapper.addEventListener('touchend', () => { isDragging = false; lastTouchDist = 0; }, { passive: true });
         window.addEventListener('resize', updateTransform);
 
