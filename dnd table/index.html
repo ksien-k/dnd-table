@@ -400,7 +400,7 @@
             updateMapButtons();
         }
 
-        // ==================== КАРТА: ZOOM / PAN ====================
+        // ==================== КАРТА: ZOOM / PAN (ВСЕ МОГУТ ДВИГАТЬ!) ====================
         let scale = 1, panX = 0, panY = 0;
         let isDragging = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
         const wrapper = document.getElementById('mapWrapper');
@@ -422,9 +422,9 @@
         function zoomOut() { scale = Math.max(0.2, scale - 0.15); updateTransform(); }
         function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
+        // ===== ПАНОРАМИРОВАНИЕ — ДЛЯ ВСЕХ! =====
         wrapper.addEventListener('mousedown', (e) => {
             if (e.target.closest('.token')) return;
-            if (!isGM) return;
             isDragging = true;
             startX = e.clientX; startY = e.clientY;
             startPanX = panX; startPanY = panY;
@@ -438,9 +438,9 @@
         });
         window.addEventListener('mouseup', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
 
+        // ===== TOUCH =====
         wrapper.addEventListener('touchstart', (e) => {
             if (e.target.closest('.token')) return;
-            if (!isGM) return;
             if (e.touches.length === 1) {
                 isDragging = true;
                 startX = e.touches[0].clientX; startY = e.touches[0].clientY;
@@ -449,13 +449,13 @@
         }, { passive: true });
 
         wrapper.addEventListener('touchmove', (e) => {
-            // Панорамирование одним пальцем (только GM)
+            // Панорамирование одним пальцем — ДЛЯ ВСЕХ!
             if (e.touches.length === 1 && isDragging) {
                 panX = startPanX + (e.touches[0].clientX - startX);
                 panY = startPanY + (e.touches[0].clientY - startY);
                 updateTransform();
             }
-            // ЗУМ ДВУМЯ ПАЛЬЦАМИ — ДЛЯ ВСЕХ!
+            // Зум двумя пальцами — ДЛЯ ВСЕХ!
             if (e.touches.length === 2) {
                 const t1 = e.touches[0], t2 = e.touches[1];
                 const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
