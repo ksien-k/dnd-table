@@ -200,6 +200,16 @@
             will-change: transform;
         }
 
+        .map-image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
         .map-image {
             width: 100%;
             height: 100%;
@@ -209,7 +219,7 @@
             pointer-events: none;
         }
 
-        /* ===== СЕТКА ===== */
+        /* ===== СЕТКА (поверх картинки, привязана к ней) ===== */
         .grid-overlay {
             position: absolute;
             top: 0;
@@ -222,7 +232,7 @@
         }
         .grid-overlay .cell {
             border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.02);
             aspect-ratio: 1 / 1;
         }
         .grid-overlay.hidden {
@@ -568,9 +578,11 @@
     <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="map-inner" id="mapInner">
-            <img class="map-image" id="mapImage" src="images/forest.jpg" alt="Карта">
-            <div class="grid-overlay" id="gridOverlay"></div>
-            <div class="tokens-layer" id="tokensLayer"></div>
+            <div class="map-image-container" id="mapImageContainer">
+                <img class="map-image" id="mapImage" src="images/forest.jpg" alt="Карта">
+                <div class="grid-overlay" id="gridOverlay"></div>
+                <div class="tokens-layer" id="tokensLayer"></div>
+            </div>
         </div>
     </div>
 
@@ -715,7 +727,7 @@
         }
 
         // ============================================
-        // УПРАВЛЕНИЕ КАРТОЙ (Zoom + Pan)
+        // УПРАВЛЕНИЕ КАРТОЙ (Zoom + Pan с ограничением)
         // ============================================
         let scale = 1;
         let panX = 0;
@@ -726,10 +738,48 @@
 
         const mapWrapper = document.getElementById('mapWrapper');
         const mapInner = document.getElementById('mapInner');
+        const mapImageContainer = document.getElementById('mapImageContainer');
         const mapImage = document.getElementById('mapImage');
         const zoomLabel = document.getElementById('zoomLabel');
 
+        // Получаем границы карты для ограничения панорамирования
+        function getMapBounds() {
+            const rect = mapWrapper.getBoundingClientRect();
+            // При scale=1 картинка влезает целиком, при scale>1 она увеличивается
+            // Вычисляем максимальное смещение, чтобы края карты не выходили за пределы окна
+            const imageRect = mapImage.getBoundingClientRect();
+            const wrapperRect = mapWrapper.getBoundingClientRect();
+            
+            // Размер картинки внутри контейнера (с учётом object-fit: contain)
+            const containerW = mapWrapper.clientWidth;
+            const containerH = mapWrapper.clientHeight;
+            
+            // Размер картинки в пикселях (естественный размер * scale)
+            const imageW = mapImage.naturalWidth || containerW;
+            const imageH = mapImage.naturalHeight || containerH;
+            
+            // Масштабируем относительно контейнера
+            const scaleX = containerW / imageW;
+            const scaleY = containerH / imageH;
+            const fitScale = Math.min(scaleX, scaleY);
+            
+            const displayW = imageW * fitScale * scale;
+            const displayH = imageH * fitScale * scale;
+            
+            const maxPanX = Math.max(0, (displayW - containerW) / 2);
+            const maxPanY = Math.max(0, (displayH - containerH) / 2);
+            
+            return { maxPanX, maxPanY };
+        }
+
+        function clampPan() {
+            const bounds = getMapBounds();
+            panX = Math.max(-bounds.maxPanX, Math.min(bounds.maxPanX, panX));
+            panY = Math.max(-bounds.maxPanY, Math.min(bounds.maxPanY, panY));
+        }
+
         function updateTransform() {
+            clampPan();
             mapInner.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
             zoomLabel.textContent = Math.round(scale * 100) + '%';
             updateTokenSizes();
@@ -815,8 +865,13 @@
             lastTouchDist = 0;
         }, { passive: true });
 
+        // Обновляем при изменении размера окна
+        window.addEventListener('resize', function() {
+            updateTransform();
+        });
+
         // ============================================
-        // СЕТКА И РАЗМЕР ФИГУРОК
+        // СЕТКА (синхронизируется через Firebase)
         // ============================================
         let snapEnabled = true;
         let gridVisible = true;
@@ -826,6 +881,31 @@
         const gridOverlay = document.getElementById('gridOverlay');
         const gridSizeSlider = document.getElementById('gridSizeSlider');
         const gridSizeLabel = document.getElementById('gridSizeLabel');
+
+        // Ссылка на размер сетки в Firebase
+        const gridSizeRef = db.ref('gridSize');
+
+        // Загружаем размер сетки из Firebase
+        gridSizeRef.on('value', function(snapshot) {
+            const data = snapshot.val();
+            if (data) {
+                const newCols = data.cols || 10;
+                const newRows = data.rows || 6;
+                if (newCols !== gridCols || newRows !== gridRows) {
+                    gridCols = newCols;
+                    gridRows = newRows;
+                    gridSizeSlider.value = gridCols;
+                    gridSizeLabel.textContent = gridCols + 'x' + gridRows;
+                    buildGrid();
+                    recalcTokenPositions();
+                    updateTokenSizes();
+                }
+            }
+        });
+
+        function saveGridSize() {
+            gridSizeRef.set({ cols: gridCols, rows: gridRows });
+        }
 
         function buildGrid() {
             gridOverlay.innerHTML = '';
@@ -839,27 +919,22 @@
         }
         buildGrid();
 
-        // Обновляем размер фигурок в зависимости от размера клетки
         function updateTokenSizes() {
-            // Размер клетки в процентах
             const cellW = 100 / gridCols;
             const cellH = 100 / gridRows;
-            // Фигурка занимает ~80% от клетки, но не меньше 20px и не больше 60px
-            const sizePercent = Math.min(cellW, cellH) * 0.8;
-            // Переводим в пиксели относительно контейнера
-            const containerRect = mapWrapper.getBoundingClientRect();
-            const containerSize = Math.min(containerRect.width, containerRect.height);
-            const pixelSize = Math.max(20, Math.min(60, containerSize * sizePercent / 100));
+            // Фигурка занимает ~55% от клетки (уменьшено, чтобы не перекрывать сетку)
+            const sizePercent = Math.min(cellW, cellH) * 0.55;
             
             document.querySelectorAll('.token').forEach(token => {
-                const fontSize = Math.max(14, Math.min(40, pixelSize * 0.85));
-                token.style.fontSize = fontSize + 'px';
                 token.style.width = sizePercent + '%';
                 token.style.height = sizePercent + '%';
-                token.style.minWidth = '16px';
-                token.style.minHeight = '16px';
-                token.style.maxWidth = '70px';
-                token.style.maxHeight = '70px';
+                // Размер шрифта тоже пропорционален
+                const fontSize = Math.max(10, Math.min(28, sizePercent * 0.8));
+                token.style.fontSize = fontSize + 'px';
+                token.style.minWidth = '18px';
+                token.style.minHeight = '18px';
+                token.style.maxWidth = '50px';
+                token.style.maxHeight = '50px';
             });
         }
 
@@ -878,10 +953,10 @@
             buildGrid();
             recalcTokenPositions();
             updateTokenSizes();
+            saveGridSize();
             document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
         });
 
-        // Обновляем label при движении ползунка
         gridSizeSlider.addEventListener('input', function() {
             const newCols = parseInt(this.value);
             const newRows = Math.round(newCols * 0.6);
@@ -948,7 +1023,6 @@
                     if (numId >= nextId) nextId = numId + 1;
                 });
                 renderTokens();
-                // Обновляем размеры после рендера
                 setTimeout(updateTokenSizes, 50);
             }
         });
@@ -1004,14 +1078,12 @@
             el.style.left = token.x + '%';
             el.style.top = token.y + '%';
             
-            // Размер фигурки будет установлен в updateTokenSizes()
-            // Но сразу задаём базовый размер, чтобы не было скачков
             const cellW = 100 / gridCols;
             const cellH = 100 / gridRows;
-            const sizePercent = Math.min(cellW, cellH) * 0.8;
+            const sizePercent = Math.min(cellW, cellH) * 0.55;
             el.style.width = sizePercent + '%';
             el.style.height = sizePercent + '%';
-            el.style.fontSize = Math.max(14, sizePercent * 0.85) + 'px';
+            el.style.fontSize = Math.max(10, Math.min(28, sizePercent * 0.8)) + 'px';
         }
 
         function renderTokens() {
@@ -1304,9 +1376,6 @@
         // ============================================
         gridSizeLabel.textContent = gridCols + 'x' + gridRows;
         updateTransform();
-
-        // При изменении размера окна обновляем размеры фигурок
-        window.addEventListener('resize', updateTokenSizes);
 
         if (!playerName) {
             document.getElementById('log').textContent = '👋 Введи свой ник!';
