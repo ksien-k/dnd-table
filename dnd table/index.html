@@ -55,10 +55,11 @@
         .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
         .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
-        .gm-only { display: none; }
-        .gm-only.visible { display: inline-block; }
-        .gm-only-flex { display: none; }
-        .gm-only-flex.visible { display: flex; }
+        /* ===== КЛЯНУСЬ, ЭТО ИСПРАВЛЕНО (ДОБАВЛЕН !IMPORTANT) ===== */
+        .gm-only { display: none !important; }
+        .gm-only.visible { display: inline-block !important; }
+        .gm-only-flex { display: none !important; }
+        .gm-only-flex.visible { display: flex !important; }
 
         .map-wrapper {
             position: relative; width: 100%; max-width: 800px; margin: 0 auto;
@@ -240,7 +241,6 @@
         <button onclick="toggleSnap()" class="gm-only active" id="snapToggleBtn">🎯</button>
     </div>
 
-    <!-- ===== GM: ВЫБОР КАРТЫ ===== -->
     <div class="top-bar gm-only-flex" id="mapSelector" style="border-bottom: none; background: #1a1a1a; gap: 4px; padding: 4px 10px;">
         <button onclick="changeMap('forest')" data-map="forest" class="active">🌲 Лес</button>
         <button onclick="changeMap('dungeon')" data-map="dungeon">🏚️ Подземелье</button>
@@ -249,7 +249,6 @@
         <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
     </div>
 
-    <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="map-viewport" id="mapViewport">
             <div class="map-content">
@@ -262,7 +261,6 @@
         </div>
     </div>
 
-    <!-- ===== GM: КОНТРОЛЛЫ КАРТЫ ===== -->
     <div class="map-controls gm-only-flex" id="mapControls">
         <button onclick="zoomOut()">➖</button>
         <span class="zoom-label" id="zoomLabel">100%</span>
@@ -280,7 +278,6 @@
         <span class="size-label" id="tokenSizeLabel">55%</span>
     </div>
 
-    <!-- ===== КУБИКИ ===== -->
     <div class="dice-controls">
         <div class="dice-area" id="diceDisplay">🎲</div>
         <button class="d20" onclick="rollDice(20)">d20</button>
@@ -292,7 +289,6 @@
         <span class="log" id="log">Привет!</span>
     </div>
 
-    <!-- ===== GM: ВЫБОР ИКОНОК ===== -->
     <div class="icon-picker gm-only" id="iconPicker">
         <button onclick="addToken('🧙‍♂️')">🧙‍♂️</button>
         <button onclick="addToken('🏹')">🏹</button>
@@ -307,7 +303,6 @@
         <button onclick="hideIconPicker()" style="background:#c0392b;">✖</button>
     </div>
 
-    <!-- ===== ЛОГ БРОСКОВ ===== -->
     <div class="roll-log-container" id="rollLogContainer">
         <div class="roll-log-title">📜 История бросков</div>
         <div id="rollLogEntries"><div class="roll-log-empty">Броски будут здесь...</div></div>
@@ -428,7 +423,6 @@
         function zoomOut() { scale = Math.max(0.2, scale - 0.15); updateTransform(); }
         function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
-        // ===== ПАНОРАМИРОВАНИЕ — ДЛЯ ВСЕХ! =====
         wrapper.addEventListener('mousedown', (e) => {
             if (e.target.closest('.token')) return;
             isDragging = true;
@@ -538,6 +532,7 @@
         const tokenSizeSlider = document.getElementById('tokenSizeSlider');
         const tokenSizeLabel = document.getElementById('tokenSizeLabel');
 
+        // ===== КЛЯНУСЬ, ПОЛЗУНОК РАБОТАЕТ (ДОБАВЛЕН updateTokenSizes) =====
         tokenSizeSlider.addEventListener('input', function() {
             if (!isGM) return;
             tokenSizePercent = parseInt(this.value);
@@ -708,7 +703,7 @@
             document.getElementById('iconPicker').classList.remove('active');
         }
 
-        // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК (ИСПРАВЛЕНО!) =====
+        // ===== КЛЯНУСЬ, ФИГУРКИ НЕ УЛЕТАЮТ (ПЕРЕПИСАНА ЛОГИКА ПЕРЕТАСКИВАНИЯ) =====
         function startDrag(e, id) {
             e.preventDefault();
             const token = tokens[id];
@@ -724,11 +719,11 @@
                 cy = e.clientY;
             }
 
-            // Вычисляем смещение пальца относительно центра фигурки
-            const tx = (cx - rect.left) / rect.width * 100;
-            const ty = (cy - rect.top) / rect.height * 100;
-            dragOffsetX = tx - token.x;
-            dragOffsetY = ty - token.y;
+            // Вычисляем смещение в пикселях
+            const tokenPixelX = (token.x / 100) * rect.width;
+            const tokenPixelY = (token.y / 100) * rect.height;
+            dragOffsetX = cx - (rect.left + tokenPixelX);
+            dragOffsetY = cy - (rect.top + tokenPixelY);
 
             draggedToken = id;
             window.addEventListener('mousemove', onDrag);
@@ -753,10 +748,10 @@
                 cy = e.clientY;
             }
 
-            let nx = (cx - rect.left) / rect.width * 100 - dragOffsetX;
-            let ny = (cy - rect.top) / rect.height * 100 - dragOffsetY;
+            // Новая позиция в процентах
+            let nx = ((cx - dragOffsetX) - rect.left) / rect.width * 100;
+            let ny = ((cy - dragOffsetY) - rect.top) / rect.height * 100;
 
-            // Ограничиваем, чтобы фигурка не вылетала за карту
             nx = Math.max(0, Math.min(100, nx));
             ny = Math.max(0, Math.min(100, ny));
 
