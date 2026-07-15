@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -55,7 +56,6 @@
         .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
         .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
-        /* ===== GM-элементы скрыты по умолчанию ===== */
         .gm-only { display: none; }
         .gm-only.visible { display: inline-block; }
         .gm-only-flex { display: none; }
@@ -230,21 +230,17 @@
         </div>
     </div>
 
-    <!-- ===== ВЕРХНЯЯ ПАНЕЛЬ ===== -->
     <div class="top-bar">
         <span class="player-id" id="playerId">Загрузка...</span>
         <span class="gm-indicator" id="gmIndicator"></span>
-        <!-- GM-кнопки -->
         <button onclick="toggleGM()" class="gm-btn gm-only" id="gmToggleBtn">👑 GM</button>
         <button onclick="showChangeName()" class="gm-only">✏️ Сменить ник</button>
         <button onclick="showIconPicker()" class="gm-only">➕ Добавить</button>
         <button class="danger gm-only" onclick="clearTokens()">🗑️</button>
         <button onclick="toggleGrid()" class="active" id="gridToggleBtn">📐</button>
-        <!-- GM-кнопки -->
         <button onclick="toggleSnap()" class="gm-only active" id="snapToggleBtn">🎯</button>
     </div>
 
-    <!-- ===== ВЫБОР КАРТЫ (только GM) ===== -->
     <div class="top-bar gm-only-flex" id="mapSelector" style="border-bottom: none; background: #1a1a1a; gap: 4px; padding: 4px 10px;">
         <button onclick="changeMap('forest')" data-map="forest" class="active">🌲 Лес</button>
         <button onclick="changeMap('dungeon')" data-map="dungeon">🏚️ Подземелье</button>
@@ -253,7 +249,6 @@
         <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
     </div>
 
-    <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="map-viewport" id="mapViewport">
             <div class="map-content">
@@ -266,7 +261,6 @@
         </div>
     </div>
 
-    <!-- ===== УПРАВЛЕНИЕ КАРТОЙ (только GM) ===== -->
     <div class="map-controls gm-only-flex" id="mapControls">
         <button onclick="zoomOut()">➖</button>
         <span class="zoom-label" id="zoomLabel">100%</span>
@@ -284,7 +278,6 @@
         <span class="size-label" id="tokenSizeLabel">55%</span>
     </div>
 
-    <!-- ===== КУБИКИ ===== -->
     <div class="dice-controls">
         <div class="dice-area" id="diceDisplay">🎲</div>
         <button class="d20" onclick="rollDice(20)">d20</button>
@@ -296,7 +289,6 @@
         <span class="log" id="log">Привет!</span>
     </div>
 
-    <!-- ===== ВЫБОР ИКОНОК (только GM) ===== -->
     <div class="icon-picker gm-only" id="iconPicker">
         <button onclick="addToken('🧙‍♂️')">🧙‍♂️</button>
         <button onclick="addToken('🏹')">🏹</button>
@@ -311,7 +303,6 @@
         <button onclick="hideIconPicker()" style="background:#c0392b;">✖</button>
     </div>
 
-    <!-- ===== ЛОГ БРОСКОВ ===== -->
     <div class="roll-log-container" id="rollLogContainer">
         <div class="roll-log-title">📜 История бросков</div>
         <div id="rollLogEntries"><div class="roll-log-empty">Броски будут здесь...</div></div>
@@ -407,11 +398,10 @@
                     el.classList.remove('visible');
                 }
             });
-            // Скрываем/показываем карты
             updateMapButtons();
         }
 
-        // ==================== КАРТА: ZOOM / PAN ====================
+        // ==================== КАРТА: ZOOM / PAN (зум работает у всех) ====================
         let scale = 1, panX = 0, panY = 0;
         let isDragging = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
         const wrapper = document.getElementById('mapWrapper');
@@ -429,13 +419,15 @@
             updateTokenSizes();
         }
 
-        function zoomIn() { if (!isGM) return; scale = Math.min(5, scale + 0.15); updateTransform(); }
-        function zoomOut() { if (!isGM) return; scale = Math.max(0.2, scale - 0.15); updateTransform(); }
-        function resetZoom() { if (!isGM) return; scale = 1; panX = 0; panY = 0; updateTransform(); }
+        // Зум доступен ВСЕМ!
+        function zoomIn() { scale = Math.min(5, scale + 0.15); updateTransform(); }
+        function zoomOut() { scale = Math.max(0.2, scale - 0.15); updateTransform(); }
+        function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
+        // Панорамирование доступно ВСЕМ! (но только если GM включил, иначе просто смотрят)
         wrapper.addEventListener('mousedown', (e) => {
             if (e.target.closest('.token')) return;
-            if (!isGM) return;
+            if (!isGM) return; // только GM может двигать карту
             isDragging = true;
             startX = e.clientX; startY = e.clientY;
             startPanX = panX; startPanY = panY;
@@ -814,7 +806,6 @@
             if (name) { currentMap = name;
                 updateMapUI(name); }
             updateMapButtons();
-            // Инициализируем GM-режим
             updateGMMode();
         });
 
