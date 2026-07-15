@@ -3,42 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DND Синхронная карта</title>
-    
+    <title>DND Карта</title>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
-
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
-            font-family: Arial, sans-serif;
-            background: #1a1a1a;
-            color: #eee;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            padding-bottom: 20px;
-            min-height: 100vh;
-            touch-action: pan-y;
+            font-family: Arial, sans-serif; background: #1a1a1a; color: #eee;
+            text-align: center; margin: 0; padding: 0; padding-bottom: 20px; min-height: 100vh;
         }
-
         .nickname-container {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            justify-content: center; align-items: center;
-            z-index: 9999;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 9999;
         }
         .nickname-container.hidden { display: none; }
         .nickname-box {
-            background: #2a2a2a;
-            padding: 30px 40px;
-            border-radius: 20px;
-            border: 2px solid #f1c40f;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
+            background: #2a2a2a; padding: 30px 40px; border-radius: 20px;
+            border: 2px solid #f1c40f; text-align: center; max-width: 400px; width: 90%;
         }
         .nickname-box label { display: block; font-size: 22px; margin-bottom: 15px; color: #eee; }
         .nickname-box input {
@@ -49,16 +30,11 @@
         .nickname-box input:focus { border-color: #f1c40f; }
         .nickname-box button {
             background: #2980b9; border: none; color: white; padding: 12px 30px;
-            border-radius: 30px; font-size: 18px; cursor: pointer; transition: 0.2s;
-            margin: 5px; min-height: 48px;
+            border-radius: 30px; font-size: 18px; cursor: pointer; margin: 5px; min-height: 48px;
         }
-        .nickname-box button:hover { background: #3498db; }
-        .nickname-box button:active { transform: scale(0.95); }
         .nickname-box .skip-btn { background: #555; }
-        .nickname-box .skip-btn:hover { background: #777; }
 
         h1 { font-size: 20px; margin: 6px 0; }
-
         .top-bar {
             display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
             gap: 4px 8px; padding: 4px 10px; background: #222; border-bottom: 1px solid #333;
@@ -79,68 +55,42 @@
         .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
         .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
-        /* ===== КАРТА ===== */
         .map-wrapper {
             position: relative; width: 100%; max-width: 800px; margin: 0 auto;
             aspect-ratio: 16 / 10; background: #1a1a1a; overflow: hidden;
             touch-action: none; cursor: grab; border: 2px solid #333; border-radius: 4px;
         }
         .map-wrapper:active { cursor: grabbing; }
-
-        .map-inner {
+        .map-viewport {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            transform-origin: 0 0; touch-action: none; will-change: transform;
+            transform-origin: 0 0; will-change: transform; touch-action: none;
         }
-
-        .map-image-container {
+        .map-content {
             position: relative; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
         }
-
-        .map-image {
-            width: 100%; height: 100%; object-fit: contain; display: block;
-            background: #1a1a1a; pointer-events: none;
-        }
-
-        /* ===== СЕТКА — НА КАРТИНКЕ, А НЕ НА КОНТЕЙНЕРЕ ===== */
+        .map-image { width: 100%; height: 100%; object-fit: contain; display: block; background: #1a1a1a; pointer-events: none; }
         .grid-overlay {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: grid;
-            pointer-events: none;
-            z-index: 5;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: grid; pointer-events: none; z-index: 5;
         }
         .grid-overlay .cell {
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.02);
             aspect-ratio: 1 / 1;
-            width: 100%;
-            height: 100%;
         }
         .grid-overlay.hidden { display: none; }
 
         .tokens-layer {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            touch-action: none;
-            z-index: 10;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            touch-action: none; z-index: 10; pointer-events: none;
         }
         .token {
-            position: absolute;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 50%;
-            border: 2px solid white;
-            cursor: grab;
-            touch-action: none;
-            text-shadow: 0 0 5px black;
+            position: absolute; display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.6); border-radius: 50%; border: 2px solid white;
+            cursor: grab; touch-action: none; text-shadow: 0 0 5px black;
             transform: translate(-50%, -50%);
-            left: 0; top: 0;
-            z-index: 10;
-            transition: filter 0.2s;
             will-change: transform, width, height, font-size;
+            pointer-events: all;
         }
         .token:active { cursor: grabbing; filter: brightness(1.3); z-index: 20; }
         .token.snap { transition: left 0.1s ease, top 0.1s ease; }
@@ -152,15 +102,10 @@
         .map-controls button {
             background: #2c3e50; border: 2px solid #444; color: white;
             padding: 4px 12px; border-radius: 16px; font-size: 14px;
-            cursor: pointer; touch-action: manipulation; min-height: 32px; transition: 0.2s;
+            cursor: pointer; touch-action: manipulation; min-height: 32px;
         }
-        .map-controls button:hover { border-color: #f1c40f; }
-        .map-controls button:active { transform: scale(0.95); }
         .map-controls .zoom-label { color: #aaa; font-size: 13px; min-width: 40px; }
-        .map-controls input[type="range"] {
-            width: 100px; accent-color: #f1c40f; cursor: pointer; touch-action: manipulation;
-        }
-        .map-controls .grid-label { color: #888; font-size: 12px; min-width: 40px; }
+        .map-controls input[type="range"] { width: 100px; accent-color: #f1c40f; cursor: pointer; }
         .map-controls .grid-size-label { color: #aaa; font-size: 13px; min-width: 50px; }
 
         .dice-controls {
@@ -171,7 +116,6 @@
             background: #34495e; border: none; color: white; padding: 6px 14px;
             border-radius: 20px; font-size: 16px; min-height: 38px; min-width: 38px;
             cursor: pointer; touch-action: manipulation; box-shadow: 0 2px 0 #1f2c38;
-            transition: 0.1s;
         }
         .dice-controls button:active { transform: translateY(2px); box-shadow: none; }
         .dice-controls button.d20 { background: #2980b9; box-shadow: 0 2px 0 #1a5276; }
@@ -187,37 +131,21 @@
             gap: 4px; border: 2px solid #555;
         }
         .icon-picker.active { display: flex; }
-        .icon-picker button {
-            font-size: 28px; background: #444; border: 2px solid transparent;
-            border-radius: 8px; padding: 4px 10px; min-height: 44px; cursor: pointer;
-        }
+        .icon-picker button { font-size: 28px; background: #444; border: 2px solid transparent; border-radius: 8px; padding: 4px 10px; min-height: 44px; cursor: pointer; }
 
         .roll-log-container {
-            max-width: 800px; margin: 10px auto 0 auto; background: rgba(0, 0, 0, 0.8);
+            max-width: 800px; margin: 10px auto; background: rgba(0,0,0,0.8);
             border-radius: 8px; padding: 6px 12px; border: 1px solid #333;
-            max-height: 150px; overflow-y: auto; -webkit-overflow-scrolling: touch; width: 98%;
+            max-height: 150px; overflow-y: auto; width: 98%;
         }
         .roll-log-container::-webkit-scrollbar { width: 4px; }
         .roll-log-container::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-        .roll-log-title {
-            font-size: 10px; color: #666; text-transform: uppercase;
-            letter-spacing: 1px; margin-bottom: 2px; text-align: left;
-        }
-        .roll-log-entry {
-            display: flex; align-items: center; gap: 8px; font-size: 13px;
-            padding: 2px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            color: #ddd; text-align: left;
-        }
+        .roll-log-title { font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 2px; text-align: left; }
+        .roll-log-entry { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.03); color: #ddd; text-align: left; }
         .roll-log-entry:last-child { border-bottom: none; }
-        .roll-log-entry .roll-player {
-            color: #f1c40f; font-weight: bold; font-size: 12px; max-width: 70px;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
+        .roll-log-entry .roll-player { color: #f1c40f; font-weight: bold; font-size: 12px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .roll-log-entry .roll-dice { color: #888; font-size: 11px; }
-        .roll-log-entry .roll-value {
-            color: #fff; font-weight: bold; background: #2a2a2a; padding: 0 8px;
-            border-radius: 4px; min-width: 24px; text-align: center; font-size: 13px;
-        }
+        .roll-log-entry .roll-value { color: #fff; font-weight: bold; background: #2a2a2a; padding: 0 8px; border-radius: 4px; min-width: 24px; text-align: center; font-size: 13px; }
         .roll-log-entry .roll-crit { color: #f1c40f; animation: pulseGold 0.5s ease; }
         .roll-log-entry .roll-fail { color: #e74c3c; animation: pulseRed 0.5s ease; }
         .roll-log-empty { color: #555; font-style: italic; font-size: 12px; padding: 4px 0; text-align: center; }
@@ -227,7 +155,7 @@
 
         .roll-toast {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85); color: #fff; padding: 6px 16px;
+            background: rgba(0,0,0,0.85); color: #fff; padding: 6px 16px;
             border-radius: 8px; font-size: 14px; border: 1px solid #f1c40f;
             z-index: 999; animation: slideUp 0.3s ease, fadeOut 3s ease 2.5s forwards;
             pointer-events: none; max-width: 90%; white-space: nowrap;
@@ -236,27 +164,20 @@
         @keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
 
         @media (max-width: 600px) {
-            h1 { font-size: 16px; margin: 4px 0; }
+            h1 { font-size: 16px; }
             .top-bar button { font-size: 11px; padding: 2px 8px; min-height: 26px; }
             .top-bar button[data-map] { font-size: 10px; padding: 2px 6px; min-height: 24px; }
             .map-controls button { font-size: 12px; padding: 2px 8px; min-height: 28px; }
             .map-controls input[type="range"] { width: 70px; }
-            .map-controls .grid-label { font-size: 10px; min-width: 30px; }
             .dice-controls button { font-size: 14px; padding: 4px 10px; min-height: 32px; min-width: 32px; }
             .dice-controls .dice-area { font-size: 26px; padding: 2px 12px; min-width: 44px; }
             .roll-log-container { max-height: 100px; }
             .roll-log-entry { font-size: 11px; }
             .roll-log-entry .roll-player { max-width: 50px; font-size: 10px; }
         }
-        @media (max-width: 400px) {
-            .top-bar button[data-map] { font-size: 9px; padding: 1px 4px; min-height: 20px; }
-            .map-controls input[type="range"] { width: 50px; }
-            .map-controls .grid-label { font-size: 9px; min-width: 25px; }
-        }
     </style>
 </head>
 <body>
-
     <h1>⚔️ Поле боя</h1>
 
     <div class="nickname-container" id="nicknameContainer">
@@ -287,12 +208,10 @@
         <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
     </div>
 
-    <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
-        <div class="map-inner" id="mapInner">
-            <div class="map-image-container" id="mapImageContainer">
+        <div class="map-viewport" id="mapViewport">
+            <div class="map-content">
                 <img class="map-image" id="mapImage" src="images/forest.jpg" alt="Карта">
-                <!-- СЕТКА ВНУТРИ КОНТЕЙНЕРА С КАРТИНКОЙ -->
                 <div class="grid-overlay" id="gridOverlay"></div>
                 <div class="tokens-layer" id="tokensLayer"></div>
             </div>
@@ -303,9 +222,9 @@
         <button onclick="zoomOut()">➖</button>
         <span class="zoom-label" id="zoomLabel">100%</span>
         <button onclick="zoomIn()">➕</button>
-        <button onclick="resetZoom()" style="font-size:14px;">⟲</button>
+        <button onclick="resetZoom()">⟲</button>
         <span style="color:#444;">|</span>
-        <span class="grid-label">📐</span>
+        <span>📐</span>
         <input type="range" id="gridSizeSlider" min="4" max="40" value="10" step="1">
         <span class="grid-size-label" id="gridSizeLabel">10x6</span>
     </div>
@@ -337,15 +256,11 @@
 
     <div class="roll-log-container" id="rollLogContainer">
         <div class="roll-log-title">📜 История бросков</div>
-        <div id="rollLogEntries">
-            <div class="roll-log-empty">Броски будут здесь...</div>
-        </div>
+        <div id="rollLogEntries"><div class="roll-log-empty">Броски будут здесь...</div></div>
     </div>
 
     <script>
-        // ============================================
-        // FIREBASE
-        // ============================================
+        // ==================== FIREBASE ====================
         const firebaseConfig = {
             apiKey: "AIzaSyCfb0M7LS3nzPcabFuvekS815GvH1fUK_Q",
             authDomain: "dnd-rubezhata.firebaseapp.com",
@@ -358,9 +273,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // ============================================
-        // НИК И GM (пароль 123)
-        // ============================================
+        // ==================== НИК И GM ====================
         const GM_PASSWORD = '123';
         let isGM = false;
         let playerName = localStorage.getItem('dnd_player_name') || '';
@@ -379,31 +292,26 @@
         function saveNickname() {
             const input = document.getElementById('nicknameInput');
             const name = input.value.trim();
-            if (name.length === 0) { alert('❌ Введи хотя бы один символ!'); return; }
-            if (name.length > 20) { alert('❌ Ник не может быть длиннее 20 символов!'); return; }
-            playerName = name;
-            displayName = name;
+            if (name.length === 0) { alert('❌ Введи хоть что-то!'); return; }
+            if (name.length > 20) { alert('❌ Слишком длинный ник!'); return; }
+            playerName = name; displayName = name;
             localStorage.setItem('dnd_player_name', name);
             document.getElementById('nicknameContainer').classList.add('hidden');
             document.getElementById('playerId').textContent = '👤 ' + displayName;
             document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
         }
-
         function skipNickname() {
             displayName = randomId;
             document.getElementById('nicknameContainer').classList.add('hidden');
             document.getElementById('playerId').textContent = '👤 ' + displayName;
             document.getElementById('log').textContent = '👋 Играем без ника';
         }
-
         function showChangeName() {
             const newName = prompt('✏️ Введи новый ник:', displayName);
-            if (newName === null) return;
+            if (!newName) return;
             const trimmed = newName.trim();
-            if (trimmed.length === 0) { alert('❌ Ник не может быть пустым!'); return; }
-            if (trimmed.length > 20) { alert('❌ Ник не может быть длиннее 20 символов!'); return; }
-            playerName = trimmed;
-            displayName = trimmed;
+            if (trimmed.length === 0 || trimmed.length > 20) { alert('❌ От 1 до 20 символов!'); return; }
+            playerName = trimmed; displayName = trimmed;
             localStorage.setItem('dnd_player_name', trimmed);
             document.getElementById('playerId').textContent = '👤 ' + displayName;
             document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
@@ -419,7 +327,6 @@
                 return;
             }
             const password = prompt('👑 Введите пароль GM:');
-            if (password === null) return;
             if (password === GM_PASSWORD) {
                 isGM = true;
                 document.getElementById('gmIndicator').textContent = '👑 GM';
@@ -427,59 +334,36 @@
                 document.getElementById('gmToggleBtn').classList.add('active');
                 document.getElementById('log').textContent = '👑 Режим GM включен!';
                 updateMapButtons();
-            } else {
+            } else if (password !== null) {
                 alert('❌ Неверный пароль!');
             }
         }
 
-        // ============================================
-        // КАРТА — ЗУМ И ПАН (С РЕАЛЬНЫМИ ГРАНИЦАМИ)
-        // ============================================
-        let scale = 1;
-        let panX = 0;
-        let panY = 0;
-        let isDraggingMap = false;
-        let startX, startY, startPanX, startPanY;
-        let lastTouchDist = 0;
-
-        const mapWrapper = document.getElementById('mapWrapper');
-        const mapInner = document.getElementById('mapInner');
+        // ==================== КАРТА: ZOOM / PAN ====================
+        let scale = 1, panX = 0, panY = 0;
+        let isDragging = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
+        const wrapper = document.getElementById('mapWrapper');
+        const viewport = document.getElementById('mapViewport');
         const mapImage = document.getElementById('mapImage');
         const zoomLabel = document.getElementById('zoomLabel');
 
-        // Вычисляем реальные границы карты
-        function getMapBounds() {
-            const containerW = mapWrapper.clientWidth;
-            const containerH = mapWrapper.clientHeight;
-            
-            // Получаем реальные размеры картинки
-            const imgW = mapImage.naturalWidth || containerW;
-            const imgH = mapImage.naturalHeight || containerH;
-            
-            // Размер картинки с учётом object-fit: contain
-            const scaleX = containerW / imgW;
-            const scaleY = containerH / imgH;
-            const fitScale = Math.min(scaleX, scaleY);
-            
-            const displayW = imgW * fitScale * scale;
-            const displayH = imgH * fitScale * scale;
-            
-            // Максимальное смещение, чтобы карта не выходила за границы
-            const maxPanX = Math.max(0, (displayW - containerW) / 2);
-            const maxPanY = Math.max(0, (displayH - containerH) / 2);
-            
-            return { maxPanX, maxPanY };
+        function getBounds() {
+            const cw = wrapper.clientWidth, ch = wrapper.clientHeight;
+            const iw = mapImage.naturalWidth || cw, ih = mapImage.naturalHeight || ch;
+            const sx = cw / iw, sy = ch / ih, fit = Math.min(sx, sy);
+            const dw = iw * fit * scale, dh = ih * fit * scale;
+            return { maxX: Math.max(0, (dw - cw) / 2), maxY: Math.max(0, (dh - ch) / 2) };
         }
 
         function clampPan() {
-            const bounds = getMapBounds();
-            panX = Math.max(-bounds.maxPanX, Math.min(bounds.maxPanX, panX));
-            panY = Math.max(-bounds.maxPanY, Math.min(bounds.maxPanY, panY));
+            const b = getBounds();
+            panX = Math.max(-b.maxX, Math.min(b.maxX, panX));
+            panY = Math.max(-b.maxY, Math.min(b.maxY, panY));
         }
 
         function updateTransform() {
             clampPan();
-            mapInner.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
+            viewport.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
             zoomLabel.textContent = Math.round(scale * 100) + '%';
             updateTokenSizes();
         }
@@ -488,37 +372,33 @@
         function zoomOut() { scale = Math.max(0.3, scale - 0.15); updateTransform(); }
         function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
-        // ===== МЫШЬ =====
-        mapWrapper.addEventListener('mousedown', function(e) {
+        // --- Мышь ---
+        wrapper.addEventListener('mousedown', (e) => {
             if (e.target.closest('.token')) return;
-            isDraggingMap = true;
+            isDragging = true;
             startX = e.clientX; startY = e.clientY;
             startPanX = panX; startPanY = panY;
-            mapWrapper.style.cursor = 'grabbing';
+            wrapper.style.cursor = 'grabbing';
         });
-        window.addEventListener('mousemove', function(e) {
-            if (!isDraggingMap) return;
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
             panX = startPanX + (e.clientX - startX);
             panY = startPanY + (e.clientY - startY);
             updateTransform();
         });
-        window.addEventListener('mouseup', function() {
-            isDraggingMap = false;
-            mapWrapper.style.cursor = 'grab';
-        });
+        window.addEventListener('mouseup', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
 
-        // ===== TOUCH =====
-        mapWrapper.addEventListener('touchstart', function(e) {
+        // --- Touch ---
+        wrapper.addEventListener('touchstart', (e) => {
             if (e.target.closest('.token')) return;
             if (e.touches.length === 1) {
-                isDraggingMap = true;
+                isDragging = true;
                 startX = e.touches[0].clientX; startY = e.touches[0].clientY;
                 startPanX = panX; startPanY = panY;
             }
         }, { passive: true });
-
-        mapWrapper.addEventListener('touchmove', function(e) {
-            if (e.touches.length === 1 && isDraggingMap) {
+        wrapper.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && isDragging) {
                 panX = startPanX + (e.touches[0].clientX - startX);
                 panY = startPanY + (e.touches[0].clientY - startY);
                 updateTransform();
@@ -534,47 +414,31 @@
                 e.preventDefault();
             }
         }, { passive: false });
-
-        mapWrapper.addEventListener('touchend', function() {
-            isDraggingMap = false;
-            lastTouchDist = 0;
-        }, { passive: true });
-
+        wrapper.addEventListener('touchend', () => { isDragging = false; lastTouchDist = 0; }, { passive: true });
         window.addEventListener('resize', updateTransform);
 
-        // ============================================
-        // СЕТКА
-        // ============================================
-        let snapEnabled = true;
-        let gridVisible = true;
-        let gridCols = 10;
-        let gridRows = 6;
-
+        // ==================== СЕТКА ====================
+        let snapEnabled = true, gridVisible = true, gridCols = 10, gridRows = 6;
         const gridOverlay = document.getElementById('gridOverlay');
         const gridSizeSlider = document.getElementById('gridSizeSlider');
         const gridSizeLabel = document.getElementById('gridSizeLabel');
         const gridSizeRef = db.ref('gridSize');
 
-        gridSizeRef.on('value', function(snapshot) {
-            const data = snapshot.val();
+        gridSizeRef.on('value', (snap) => {
+            const data = snap.val();
             if (data) {
-                const newCols = data.cols || 10;
-                const newRows = data.rows || 6;
-                if (newCols !== gridCols || newRows !== gridRows) {
-                    gridCols = newCols;
-                    gridRows = newRows;
+                const nc = data.cols || 10, nr = data.rows || 6;
+                if (nc !== gridCols || nr !== gridRows) {
+                    gridCols = nc; gridRows = nr;
                     gridSizeSlider.value = gridCols;
                     gridSizeLabel.textContent = gridCols + 'x' + gridRows;
                     buildGrid();
                     recalcTokenPositions();
-                    updateTokenSizes();
                 }
             }
         });
 
-        function saveGridSize() {
-            gridSizeRef.set({ cols: gridCols, rows: gridRows });
-        }
+        function saveGridSize() { gridSizeRef.set({ cols: gridCols, rows: gridRows }); }
 
         function buildGrid() {
             gridOverlay.innerHTML = '';
@@ -589,44 +453,37 @@
         buildGrid();
 
         function updateTokenSizes() {
-            const cellW = 100 / gridCols;
-            const cellH = 100 / gridRows;
-            const sizePercent = Math.min(cellW, cellH) * 0.55;
-            document.querySelectorAll('.token').forEach(token => {
-                token.style.width = sizePercent + '%';
-                token.style.height = sizePercent + '%';
-                token.style.fontSize = Math.max(10, Math.min(28, sizePercent * 0.8)) + 'px';
-                token.style.minWidth = '18px';
-                token.style.minHeight = '18px';
-                token.style.maxWidth = '50px';
-                token.style.maxHeight = '50px';
+            const cellW = 100 / gridCols, cellH = 100 / gridRows;
+            const size = Math.min(cellW, cellH) * 0.55;
+            document.querySelectorAll('.token').forEach(t => {
+                t.style.width = size + '%';
+                t.style.height = size + '%';
+                t.style.fontSize = Math.max(10, Math.min(28, size * 0.8)) + 'px';
+                t.style.minWidth = '18px'; t.style.minHeight = '18px';
+                t.style.maxWidth = '50px'; t.style.maxHeight = '50px';
             });
         }
 
         gridSizeSlider.addEventListener('change', function() {
             if (!isGM) {
                 document.getElementById('log').textContent = '⛔ Только GM может менять сетку!';
-                gridSizeSlider.value = gridCols;
+                this.value = gridCols;
                 return;
             }
-            const newCols = parseInt(this.value);
-            const newRows = Math.round(newCols * 0.6);
-            if (newRows < 3) return;
-            gridCols = newCols;
-            gridRows = newRows;
+            const nc = parseInt(this.value);
+            const nr = Math.round(nc * 0.6);
+            if (nr < 3) return;
+            gridCols = nc; gridRows = nr;
             gridSizeLabel.textContent = gridCols + 'x' + gridRows;
             buildGrid();
             recalcTokenPositions();
-            updateTokenSizes();
             saveGridSize();
             document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
         });
-
         gridSizeSlider.addEventListener('input', function() {
-            const newCols = parseInt(this.value);
-            const newRows = Math.round(newCols * 0.6);
-            if (newRows < 3) return;
-            gridSizeLabel.textContent = newCols + 'x' + newRows;
+            const nc = parseInt(this.value);
+            const nr = Math.round(nc * 0.6);
+            if (nr >= 3) gridSizeLabel.textContent = nc + 'x' + nr;
         });
 
         function toggleGrid() {
@@ -634,7 +491,6 @@
             gridOverlay.classList.toggle('hidden');
             document.getElementById('gridToggleBtn').classList.toggle('active');
         }
-
         function toggleSnap() {
             snapEnabled = !snapEnabled;
             document.getElementById('snapToggleBtn').classList.toggle('active');
@@ -642,49 +498,37 @@
             document.getElementById('log').textContent = '🎯 Прилипание: ' + (snapEnabled ? 'Вкл' : 'Выкл');
         }
 
-        // ============================================
-        // ФИГУРКИ (сохраняются в Firebase)
-        // ============================================
+        // ==================== ФИГУРКИ ====================
         const tokensLayer = document.getElementById('tokensLayer');
-        let tokens = {};
-        let nextId = 1;
-        let draggedToken = null;
-        let dragOffsetX = 0, dragOffsetY = 0;
-        let isLocalUpdate = false;
+        let tokens = {}, nextId = 1, draggedToken = null, dragOffX = 0, dragOffY = 0, isLocalUpdate = false;
+        const tokensRef = db.ref('tokens');
 
-        function getSnappedPosition(x, y) {
+        function getSnapped(x, y) {
             if (!snapEnabled) return { x, y };
-            const cellW = 100 / gridCols;
-            const cellH = 100 / gridRows;
-            const col = Math.round(x / cellW);
-            const row = Math.round(y / cellH);
-            return {
-                x: Math.max(0, Math.min(100, col * cellW + cellW / 2)),
-                y: Math.max(0, Math.min(100, row * cellH + cellH / 2))
-            };
+            const cw = 100 / gridCols, ch = 100 / gridRows;
+            const col = Math.round(x / cw), row = Math.round(y / ch);
+            return { x: Math.max(0, Math.min(100, col * cw + cw/2)), y: Math.max(0, Math.min(100, row * ch + ch/2)) };
         }
 
         function recalcTokenPositions() {
-            Object.values(tokens).forEach(token => {
-                const pos = getSnappedPosition(token.x, token.y);
-                token.x = pos.x;
-                token.y = pos.y;
+            Object.values(tokens).forEach(t => {
+                const pos = getSnapped(t.x, t.y);
+                t.x = pos.x; t.y = pos.y;
             });
             saveTokens();
             renderTokens();
         }
 
-        const tokensRef = db.ref('tokens');
-
-        // ===== ЗАГРУЗКА — используем on('value') для полной синхронизации =====
-        tokensRef.on('value', function(snapshot) {
+        // Загрузка (один раз)
+        tokensRef.on('value', (snapshot) => {
             if (isLocalUpdate) return;
             const data = snapshot.val();
             if (data) {
                 tokens = data;
+                nextId = 1;
                 Object.keys(tokens).forEach(id => {
-                    const numId = parseInt(id);
-                    if (numId >= nextId) nextId = numId + 1;
+                    const num = parseInt(id);
+                    if (num >= nextId) nextId = num + 1;
                 });
             } else {
                 tokens = {};
@@ -704,10 +548,7 @@
                 el.dataset.id = id;
                 el.addEventListener('dblclick', () => deleteToken(id));
                 el.addEventListener('touchstart', (e) => {
-                    const timer = setTimeout(() => {
-                        if (navigator.vibrate) navigator.vibrate(50);
-                        deleteToken(id);
-                    }, 800);
+                    const timer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(50); deleteToken(id); }, 800);
                     el._timer = timer;
                 });
                 el.addEventListener('touchend', () => clearTimeout(el._timer));
@@ -719,13 +560,10 @@
             el.textContent = token.icon;
             el.style.left = token.x + '%';
             el.style.top = token.y + '%';
-            
-            const cellW = 100 / gridCols;
-            const cellH = 100 / gridRows;
-            const sizePercent = Math.min(cellW, cellH) * 0.55;
-            el.style.width = sizePercent + '%';
-            el.style.height = sizePercent + '%';
-            el.style.fontSize = Math.max(10, Math.min(28, sizePercent * 0.8)) + 'px';
+            const size = Math.min(100 / gridCols, 100 / gridRows) * 0.55;
+            el.style.width = size + '%';
+            el.style.height = size + '%';
+            el.style.fontSize = Math.max(10, Math.min(28, size * 0.8)) + 'px';
         }
 
         function renderTokens() {
@@ -736,89 +574,55 @@
 
         function saveTokens() {
             isLocalUpdate = true;
-            tokensRef.set(tokens).then(() => {
-                isLocalUpdate = false;
-            });
+            tokensRef.set(tokens).then(() => { isLocalUpdate = false; });
         }
 
         function deleteToken(id) {
-            if (!isGM) {
-                document.getElementById('log').textContent = '⛔ Только GM может удалять!';
-                return;
-            }
+            if (!isGM) { document.getElementById('log').textContent = '⛔ Только GM может удалять!'; return; }
             isLocalUpdate = true;
-            tokensRef.child(id).remove().then(() => {
-                isLocalUpdate = false;
-            });
+            tokensRef.child(id).remove().then(() => { isLocalUpdate = false; });
             document.getElementById('log').textContent = '🗑️ Удалён персонаж';
         }
 
         function addToken(icon) {
-            const offsetX = (Math.random() - 0.5) * 10;
-            const offsetY = (Math.random() - 0.5) * 10;
-            const pos = getSnappedPosition(50 + offsetX, 50 + offsetY);
+            const pos = getSnapped(50 + (Math.random() - 0.5) * 10, 50 + (Math.random() - 0.5) * 10);
             const id = nextId++;
-            const tokenData = { icon: icon, x: pos.x, y: pos.y };
-            
+            const data = { icon, x: pos.x, y: pos.y };
             isLocalUpdate = true;
-            tokensRef.child(id).set(tokenData).then(() => {
-                isLocalUpdate = false;
-            });
-            
-            // Добавляем локально сразу
-            tokens[id] = tokenData;
+            tokensRef.child(id).set(data).then(() => { isLocalUpdate = false; });
+            tokens[id] = data;
             renderToken(id);
-            
             hideIconPicker();
             if (navigator.vibrate) navigator.vibrate(20);
             document.getElementById('log').textContent = '➕ Добавлен ' + icon;
         }
 
         function clearTokens() {
-            if (!isGM) {
-                document.getElementById('log').textContent = '⛔ Только GM может очищать!';
-                return;
-            }
+            if (!isGM) { document.getElementById('log').textContent = '⛔ Только GM может очищать!'; return; }
             if (Object.keys(tokens).length === 0) return;
             if (confirm('Удалить всех персонажей?')) {
                 isLocalUpdate = true;
-                tokensRef.set(null).then(() => {
-                    isLocalUpdate = false;
-                });
+                tokensRef.set(null).then(() => { isLocalUpdate = false; });
                 document.getElementById('log').textContent = '🗑️ Все удалены';
             }
         }
 
-        function showIconPicker() {
-            document.getElementById('iconPicker').classList.toggle('active');
-        }
-
-        function hideIconPicker() {
-            document.getElementById('iconPicker').classList.remove('active');
-        }
+        function showIconPicker() { document.getElementById('iconPicker').classList.toggle('active'); }
+        function hideIconPicker() { document.getElementById('iconPicker').classList.remove('active'); }
 
         // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК =====
-        function startDrag(e, tokenId) {
+        function startDrag(e, id) {
             e.preventDefault();
-            const token = tokens[tokenId];
+            const token = tokens[id];
             if (!token) return;
-
-            const rect = mapWrapper.getBoundingClientRect();
-            let clientX, clientY;
-            if (e.type === 'touchstart') {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            const tokenX = (clientX - rect.left) / rect.width * 100;
-            const tokenY = (clientY - rect.top) / rect.height * 100;
-            dragOffsetX = tokenX - token.x;
-            dragOffsetY = tokenY - token.y;
-            draggedToken = tokenId;
-
+            const rect = wrapper.getBoundingClientRect();
+            let cx, cy;
+            if (e.type === 'touchstart') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+            else { cx = e.clientX; cy = e.clientY; }
+            const tx = (cx - rect.left) / rect.width * 100;
+            const ty = (cy - rect.top) / rect.height * 100;
+            dragOffX = tx - token.x; dragOffY = ty - token.y;
+            draggedToken = id;
             window.addEventListener('mousemove', onDrag);
             window.addEventListener('mouseup', endDrag);
             window.addEventListener('touchmove', onDrag, { passive: false });
@@ -830,46 +634,24 @@
             e.preventDefault();
             const token = tokens[draggedToken];
             if (!token) return;
-
-            const rect = mapWrapper.getBoundingClientRect();
-            let clientX, clientY;
-            if (e.type === 'touchmove') {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            let newX = (clientX - rect.left) / rect.width * 100 - dragOffsetX;
-            let newY = (clientY - rect.top) / rect.height * 100 - dragOffsetY;
-            
-            if (snapEnabled) {
-                const snapped = getSnappedPosition(newX, newY);
-                newX = snapped.x;
-                newY = snapped.y;
-            } else {
-                newX = Math.max(0, Math.min(100, newX));
-                newY = Math.max(0, Math.min(100, newY));
-            }
-
-            token.x = newX;
-            token.y = newY;
-
+            const rect = wrapper.getBoundingClientRect();
+            let cx, cy;
+            if (e.type === 'touchmove') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+            else { cx = e.clientX; cy = e.clientY; }
+            let nx = (cx - rect.left) / rect.width * 100 - dragOffX;
+            let ny = (cy - rect.top) / rect.height * 100 - dragOffY;
+            if (snapEnabled) { const s = getSnapped(nx, ny); nx = s.x; ny = s.y; }
+            else { nx = Math.max(0, Math.min(100, nx)); ny = Math.max(0, Math.min(100, ny)); }
+            token.x = nx; token.y = ny;
             const el = tokensLayer.querySelector(`[data-id="${draggedToken}"]`);
-            if (el) {
-                el.style.left = newX + '%';
-                el.style.top = newY + '%';
-            }
+            if (el) { el.style.left = nx + '%'; el.style.top = ny + '%'; }
         }
 
-        function endDrag(e) {
+        function endDrag() {
             if (draggedToken !== null && tokens[draggedToken]) {
                 const token = tokens[draggedToken];
                 isLocalUpdate = true;
-                tokensRef.child(draggedToken).set(token).then(() => {
-                    isLocalUpdate = false;
-                });
+                tokensRef.child(draggedToken).set(token).then(() => { isLocalUpdate = false; });
                 draggedToken = null;
             }
             window.removeEventListener('mousemove', onDrag);
@@ -878,96 +660,64 @@
             window.removeEventListener('touchend', endDrag);
         }
 
-        // ============================================
-        // КАРТЫ
-        // ============================================
-        let currentMap = 'forest';
-        let isLocalMapUpdate = false;
-
+        // ==================== КАРТЫ ====================
+        let currentMap = 'forest', isLocalMapUpdate = false;
         const mapRef = db.ref('currentMap');
-        mapRef.on('value', function(snapshot) {
+        mapRef.on('value', (snap) => {
             if (isLocalMapUpdate) return;
-            const mapName = snapshot.val();
-            if (mapName && mapName !== currentMap) {
-                currentMap = mapName;
-                updateMapUI(mapName);
-            }
+            const name = snap.val();
+            if (name && name !== currentMap) { currentMap = name; updateMapUI(name); }
         });
 
-        function changeMap(mapName) {
-            if (!isGM) {
-                document.getElementById('log').textContent = '⛔ Только GM может менять карту!';
-                return;
-            }
+        function changeMap(name) {
+            if (!isGM) { document.getElementById('log').textContent = '⛔ Только GM может менять карту!'; return; }
             isLocalMapUpdate = true;
-            currentMap = mapName;
-            mapRef.set(mapName).then(() => {
-                isLocalMapUpdate = false;
-            });
-            updateMapUI(mapName);
-            document.getElementById('log').textContent = '🗺️ Карта: ' + mapName;
+            currentMap = name;
+            mapRef.set(name).then(() => { isLocalMapUpdate = false; });
+            updateMapUI(name);
+            document.getElementById('log').textContent = '🗺️ Карта: ' + name;
             if (navigator.vibrate) navigator.vibrate(20);
         }
 
-        function updateMapUI(mapName) {
-            mapImage.src = 'images/' + mapName + '.jpg';
-            document.querySelectorAll('.top-bar button[data-map]').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.map === mapName) btn.classList.add('active');
+        function updateMapUI(name) {
+            mapImage.src = 'images/' + name + '.jpg';
+            document.querySelectorAll('.top-bar button[data-map]').forEach(b => {
+                b.classList.toggle('active', b.dataset.map === name);
             });
             resetZoom();
         }
 
         function updateMapButtons() {
-            document.querySelectorAll('.top-bar button[data-map]').forEach(btn => {
-                if (isGM) {
-                    btn.classList.remove('disabled');
-                } else {
-                    btn.classList.add('disabled');
-                }
+            document.querySelectorAll('.top-bar button[data-map]').forEach(b => {
+                b.classList.toggle('disabled', !isGM);
             });
         }
 
-        mapRef.once('value', function(snapshot) {
-            const mapName = snapshot.val();
-            if (mapName) {
-                currentMap = mapName;
-                updateMapUI(mapName);
-            }
+        mapRef.once('value', (snap) => {
+            const name = snap.val();
+            if (name) { currentMap = name; updateMapUI(name); }
             updateMapButtons();
         });
 
-        // ============================================
-        // ЛОГ И КУБИКИ
-        // ============================================
-        const MAX_LOG_ENTRIES = 15;
+        // ==================== КУБИКИ ====================
+        const MAX_LOG = 15;
 
         function addLogEntry(player, sides, result) {
             const container = document.getElementById('rollLogEntries');
             const empty = container.querySelector('.roll-log-empty');
             if (empty) empty.remove();
-            
             const entry = document.createElement('div');
             entry.className = 'roll-log-entry';
-            let valueHtml = '<span class="roll-value">' + result + '</span>';
-            if (sides === 20 && result === 20) {
-                valueHtml = '<span class="roll-value roll-crit">' + result + ' 🔥</span>';
-            } else if (sides === 20 && result === 1) {
-                valueHtml = '<span class="roll-value roll-fail">' + result + ' 💀</span>';
-            }
-            entry.innerHTML = 
-                '<span class="roll-player">' + player + '</span>' +
-                '<span class="roll-dice">d' + sides + '</span>' +
-                valueHtml;
+            let valHtml = '<span class="roll-value">' + result + '</span>';
+            if (sides === 20 && result === 20) valHtml = '<span class="roll-value roll-crit">' + result + ' 🔥</span>';
+            else if (sides === 20 && result === 1) valHtml = '<span class="roll-value roll-fail">' + result + ' 💀</span>';
+            entry.innerHTML = '<span class="roll-player">' + player + '</span><span class="roll-dice">d' + sides + '</span>' + valHtml;
             container.prepend(entry);
-            while (container.children.length > MAX_LOG_ENTRIES) {
-                container.removeChild(container.lastChild);
-            }
+            while (container.children.length > MAX_LOG) container.removeChild(container.lastChild);
         }
 
-        function showRollToast(msg) {
-            const old = document.querySelectorAll('.roll-toast');
-            old.forEach(el => el.remove());
+        function showToast(msg) {
+            document.querySelectorAll('.roll-toast').forEach(el => el.remove());
             const div = document.createElement('div');
             div.className = 'roll-toast';
             div.textContent = msg;
@@ -976,55 +726,37 @@
         }
 
         function rollDice(sides) {
-            let result = Math.floor(Math.random() * sides) + 1;
-            let crit = false, fail = false;
+            const result = Math.floor(Math.random() * sides) + 1;
+            let crit = sides === 20 && result === 20;
+            let fail = sides === 20 && result === 1;
             let msg = displayName + ' кинул d' + sides + ': ' + result;
-            if (sides === 20 && result === 20) { crit = true; msg += ' 🔥 КРИТ!'; }
-            if (sides === 20 && result === 1) { fail = true; msg += ' 💀 ПРОВАЛ!'; }
-
+            if (crit) msg += ' 🔥 КРИТ!';
+            if (fail) msg += ' 💀 ПРОВАЛ!';
             document.getElementById('diceDisplay').textContent = '⏳';
             addLogEntry(displayName, sides, result);
-
-            const rollRef = db.ref('rolls');
-            rollRef.push({
-                player: displayName,
-                sides: sides,
-                result: result,
-                crit: crit,
-                fail: fail,
-                timestamp: Date.now()
-            });
-
+            db.ref('rolls').push({ player: displayName, sides, result, crit, fail, timestamp: Date.now() });
             setTimeout(() => {
                 document.getElementById('diceDisplay').textContent = '🎲 ' + result;
                 document.getElementById('log').textContent = 'Твой бросок: ' + result;
             }, 200);
         }
 
-        const rollRef = db.ref('rolls');
-        rollRef.limitToLast(1).on('child_added', function(snapshot) {
-            const data = snapshot.val();
+        db.ref('rolls').limitToLast(1).on('child_added', (snap) => {
+            const data = snap.val();
             if (data.player === displayName) return;
             addLogEntry(data.player, data.sides, data.result);
             let msg = '🎲 ' + data.player + ' кинул d' + data.sides + ': ' + data.result;
             if (data.crit) msg += ' 🔥';
             if (data.fail) msg += ' 💀';
-            showRollToast(msg);
+            showToast(msg);
             document.getElementById('diceDisplay').textContent = '⏳';
-            setTimeout(() => {
-                document.getElementById('diceDisplay').textContent = '🎲 ' + data.result;
-            }, 200);
+            setTimeout(() => { document.getElementById('diceDisplay').textContent = '🎲 ' + data.result; }, 200);
         });
 
-        // ============================================
-        // ЗАПУСК
-        // ============================================
+        // ==================== СТАРТ ====================
         gridSizeLabel.textContent = gridCols + 'x' + gridRows;
         updateTransform();
-
-        if (!playerName) {
-            document.getElementById('log').textContent = '👋 Введи свой ник!';
-        }
+        if (!playerName) document.getElementById('log').textContent = '👋 Введи свой ник!';
     </script>
 </body>
 </html>
