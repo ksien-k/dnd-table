@@ -27,7 +27,6 @@
             touch-action: pan-y;
         }
 
-        /* ===== ВВОД НИКА ===== */
         .nickname-container {
             position: fixed;
             top: 0;
@@ -40,9 +39,7 @@
             align-items: center;
             z-index: 9999;
         }
-        .nickname-container.hidden {
-            display: none;
-        }
+        .nickname-container.hidden { display: none; }
         .nickname-box {
             background: #2a2a2a;
             padding: 30px 40px;
@@ -52,473 +49,183 @@
             max-width: 400px;
             width: 90%;
         }
-        .nickname-box label {
-            display: block;
-            font-size: 22px;
-            margin-bottom: 15px;
-            color: #eee;
-        }
+        .nickname-box label { display: block; font-size: 22px; margin-bottom: 15px; color: #eee; }
         .nickname-box input {
-            width: 100%;
-            padding: 12px;
-            font-size: 20px;
-            border-radius: 10px;
-            border: 2px solid #555;
-            background: #1e1e1e;
-            color: #fff;
-            margin-bottom: 15px;
-            text-align: center;
-            outline: none;
+            width: 100%; padding: 12px; font-size: 20px; border-radius: 10px;
+            border: 2px solid #555; background: #1e1e1e; color: #fff;
+            margin-bottom: 15px; text-align: center; outline: none;
         }
-        .nickname-box input:focus {
-            border-color: #f1c40f;
-        }
+        .nickname-box input:focus { border-color: #f1c40f; }
         .nickname-box button {
-            background: #2980b9;
-            border: none;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: 0.2s;
-            margin: 5px;
-            min-height: 48px;
+            background: #2980b9; border: none; color: white; padding: 12px 30px;
+            border-radius: 30px; font-size: 18px; cursor: pointer; transition: 0.2s;
+            margin: 5px; min-height: 48px;
         }
-        .nickname-box button:hover {
-            background: #3498db;
-        }
-        .nickname-box button:active {
-            transform: scale(0.95);
-        }
-        .nickname-box .skip-btn {
-            background: #555;
-        }
-        .nickname-box .skip-btn:hover {
-            background: #777;
-        }
+        .nickname-box button:hover { background: #3498db; }
+        .nickname-box button:active { transform: scale(0.95); }
+        .nickname-box .skip-btn { background: #555; }
+        .nickname-box .skip-btn:hover { background: #777; }
 
-        /* ===== ЗАГОЛОВОК ===== */
-        h1 {
-            font-size: 20px;
-            margin: 6px 0;
-            flex-shrink: 0;
-        }
+        h1 { font-size: 20px; margin: 6px 0; flex-shrink: 0; }
 
-        /* ===== ВЕРХНЯЯ ПАНЕЛЬ ===== */
         .top-bar {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 4px 8px;
-            padding: 4px 10px;
-            background: #222;
-            border-bottom: 1px solid #333;
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 4px 8px; padding: 4px 10px; background: #222; border-bottom: 1px solid #333;
         }
-        .top-bar .player-id {
-            color: #f1c40f;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        .top-bar .gm-indicator {
-            color: #8e44ad;
-            font-size: 13px;
-        }
+        .top-bar .player-id { color: #f1c40f; font-size: 14px; font-weight: bold; }
+        .top-bar .gm-indicator { color: #8e44ad; font-size: 13px; }
         .top-bar button {
-            background: #2c3e50;
-            border: 2px solid #444;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 13px;
-            cursor: pointer;
-            touch-action: manipulation;
-            min-height: 32px;
-            transition: 0.2s;
+            background: #2c3e50; border: 2px solid #444; color: white;
+            padding: 4px 12px; border-radius: 16px; font-size: 13px;
+            cursor: pointer; touch-action: manipulation; min-height: 32px; transition: 0.2s;
         }
-        .top-bar button:hover {
-            border-color: #f1c40f;
-        }
-        .top-bar button:active {
-            transform: scale(0.95);
-        }
-        .top-bar button.active {
-            border-color: #f1c40f;
-            background: #34495e;
-        }
-        .top-bar button.gm-btn.active {
-            background: #f1c40f;
-            color: #1e1e1e;
-            border-color: #f1c40f;
-        }
-        .top-bar button.danger {
-            background: #c0392b;
-            border-color: #c0392b;
-        }
-        .top-bar button[data-map] {
-            font-size: 12px;
-            padding: 2px 10px;
-            min-height: 28px;
-        }
-        .top-bar button[data-map].active {
-            border-color: #f1c40f;
-            background: #34495e;
-        }
-        .top-bar button[data-map].disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
+        .top-bar button:hover { border-color: #f1c40f; }
+        .top-bar button:active { transform: scale(0.95); }
+        .top-bar button.active { border-color: #f1c40f; background: #34495e; }
+        .top-bar button.gm-btn.active { background: #f1c40f; color: #1e1e1e; border-color: #f1c40f; }
+        .top-bar button.danger { background: #c0392b; border-color: #c0392b; }
+        .top-bar button[data-map] { font-size: 12px; padding: 2px 10px; min-height: 28px; }
+        .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
+        .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
-        /* ===== КАРТА ===== */
         .map-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            aspect-ratio: 16 / 10;
-            background: #1a1a1a;
-            overflow: hidden;
-            touch-action: none;
-            cursor: grab;
-            border: 2px solid #333;
-            border-radius: 4px;
+            position: relative; width: 100%; max-width: 800px; margin: 0 auto;
+            aspect-ratio: 16 / 10; background: #1a1a1a; overflow: hidden;
+            touch-action: none; cursor: grab; border: 2px solid #333; border-radius: 4px;
         }
-        .map-wrapper:active {
-            cursor: grabbing;
-        }
+        .map-wrapper:active { cursor: grabbing; }
 
         .map-inner {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform-origin: 0 0;
-            touch-action: none;
-            will-change: transform;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transform-origin: 0 0; touch-action: none; will-change: transform;
         }
 
         .map-image-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            position: relative; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
 
         .map-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: block;
-            background: #1a1a1a;
-            pointer-events: none;
+            width: 100%; height: 100%; object-fit: contain; display: block;
+            background: #1a1a1a; pointer-events: none;
         }
 
-        /* ===== СЕТКА (поверх картинки, привязана к ней) ===== */
         .grid-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: grid;
-            pointer-events: none;
-            z-index: 5;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: grid; pointer-events: none; z-index: 5;
         }
         .grid-overlay .cell {
             border: 1px solid rgba(255, 255, 255, 0.15);
             background: rgba(255, 255, 255, 0.02);
             aspect-ratio: 1 / 1;
         }
-        .grid-overlay.hidden {
-            display: none;
-        }
+        .grid-overlay.hidden { display: none; }
 
-        /* ===== ФИГУРКИ ===== */
         .tokens-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            touch-action: none;
-            z-index: 10;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            touch-action: none; z-index: 10;
         }
         .token {
-            position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 50%;
-            border: 2px solid white;
-            cursor: grab;
-            touch-action: none;
-            text-shadow: 0 0 5px black;
-            transform: translate(-50%, -50%);
-            left: 0;
-            top: 0;
-            z-index: 10;
+            position: absolute; display: flex; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, 0.6); border-radius: 50%; border: 2px solid white;
+            cursor: grab; touch-action: none; text-shadow: 0 0 5px black;
+            transform: translate(-50%, -50%); left: 0; top: 0; z-index: 10;
             transition: filter 0.2s;
             will-change: transform, width, height, font-size;
         }
-        .token:active {
-            cursor: grabbing;
-            filter: brightness(1.3);
-            z-index: 20;
-        }
-        .token.snap {
-            transition: left 0.1s ease, top 0.1s ease;
-        }
+        .token:active { cursor: grabbing; filter: brightness(1.3); z-index: 20; }
+        .token.snap { transition: left 0.1s ease, top 0.1s ease; }
 
-        /* ===== КОНТРОЛЛЫ КАРТЫ ===== */
         .map-controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 4px 8px;
-            padding: 6px 10px;
-            background: #222;
-            border-bottom: 1px solid #333;
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 4px 8px; padding: 6px 10px; background: #222; border-bottom: 1px solid #333;
         }
         .map-controls button {
-            background: #2c3e50;
-            border: 2px solid #444;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 14px;
-            cursor: pointer;
-            touch-action: manipulation;
-            min-height: 32px;
-            transition: 0.2s;
+            background: #2c3e50; border: 2px solid #444; color: white;
+            padding: 4px 12px; border-radius: 16px; font-size: 14px;
+            cursor: pointer; touch-action: manipulation; min-height: 32px; transition: 0.2s;
         }
-        .map-controls button:hover {
-            border-color: #f1c40f;
-        }
-        .map-controls button:active {
-            transform: scale(0.95);
-        }
-        .map-controls .zoom-label {
-            color: #aaa;
-            font-size: 13px;
-            min-width: 40px;
-        }
+        .map-controls button:hover { border-color: #f1c40f; }
+        .map-controls button:active { transform: scale(0.95); }
+        .map-controls .zoom-label { color: #aaa; font-size: 13px; min-width: 40px; }
         .map-controls input[type="range"] {
-            width: 100px;
-            accent-color: #f1c40f;
-            cursor: pointer;
-            touch-action: manipulation;
+            width: 100px; accent-color: #f1c40f; cursor: pointer; touch-action: manipulation;
         }
-        .map-controls .grid-label {
-            color: #888;
-            font-size: 12px;
-            min-width: 40px;
-        }
-        .map-controls .grid-size-label {
-            color: #aaa;
-            font-size: 13px;
-            min-width: 50px;
-        }
+        .map-controls .grid-label { color: #888; font-size: 12px; min-width: 40px; }
+        .map-controls .grid-size-label { color: #aaa; font-size: 13px; min-width: 50px; }
 
-        /* ===== КНОПКИ КУБИКОВ ===== */
         .dice-controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 4px 8px;
-            padding: 6px 10px;
-            background: #222;
-            border-bottom: 1px solid #333;
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 4px 8px; padding: 6px 10px; background: #222; border-bottom: 1px solid #333;
         }
         .dice-controls button {
-            background: #34495e;
-            border: none;
-            color: white;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 16px;
-            min-height: 38px;
-            min-width: 38px;
-            cursor: pointer;
-            touch-action: manipulation;
-            box-shadow: 0 2px 0 #1f2c38;
+            background: #34495e; border: none; color: white; padding: 6px 14px;
+            border-radius: 20px; font-size: 16px; min-height: 38px; min-width: 38px;
+            cursor: pointer; touch-action: manipulation; box-shadow: 0 2px 0 #1f2c38;
             transition: 0.1s;
         }
-        .dice-controls button:active {
-            transform: translateY(2px);
-            box-shadow: none;
-        }
-        .dice-controls button.d20 {
-            background: #2980b9;
-            box-shadow: 0 2px 0 #1a5276;
-        }
+        .dice-controls button:active { transform: translateY(2px); box-shadow: none; }
+        .dice-controls button.d20 { background: #2980b9; box-shadow: 0 2px 0 #1a5276; }
         .dice-controls .dice-area {
-            font-size: 32px;
-            background: #2a2a2a;
-            padding: 4px 16px;
-            border-radius: 16px;
-            min-width: 60px;
-            display: inline-block;
+            font-size: 32px; background: #2a2a2a; padding: 4px 16px;
+            border-radius: 16px; min-width: 60px; display: inline-block;
         }
-        .dice-controls .log {
-            font-size: 14px;
-            color: #aaa;
-            min-height: 24px;
-        }
+        .dice-controls .log { font-size: 14px; color: #aaa; min-height: 24px; }
 
-        /* ===== ВЫБОР ИКОНОК ===== */
         .icon-picker {
-            display: none;
-            background: #2a2a2a;
-            padding: 8px;
-            border-radius: 12px;
-            margin: 4px auto;
-            max-width: 350px;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 4px;
-            border: 2px solid #555;
+            display: none; background: #2a2a2a; padding: 8px; border-radius: 12px;
+            margin: 4px auto; max-width: 350px; flex-wrap: wrap; justify-content: center;
+            gap: 4px; border: 2px solid #555;
         }
-        .icon-picker.active {
-            display: flex;
-        }
+        .icon-picker.active { display: flex; }
         .icon-picker button {
-            font-size: 28px;
-            background: #444;
-            border: 2px solid transparent;
-            border-radius: 8px;
-            padding: 4px 10px;
-            min-height: 44px;
-            cursor: pointer;
+            font-size: 28px; background: #444; border: 2px solid transparent;
+            border-radius: 8px; padding: 4px 10px; min-height: 44px; cursor: pointer;
         }
 
-        /* ===== ЛОГ БРОСКОВ ===== */
         .roll-log-container {
-            max-width: 800px;
-            margin: 10px auto 0 auto;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 8px;
-            padding: 6px 12px;
-            border: 1px solid #333;
-            max-height: 150px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            width: 98%;
+            max-width: 800px; margin: 10px auto 0 auto; background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px; padding: 6px 12px; border: 1px solid #333;
+            max-height: 150px; overflow-y: auto; -webkit-overflow-scrolling: touch; width: 98%;
         }
-        .roll-log-container::-webkit-scrollbar {
-            width: 4px;
-        }
-        .roll-log-container::-webkit-scrollbar-thumb {
-            background: #444;
-            border-radius: 10px;
-        }
+        .roll-log-container::-webkit-scrollbar { width: 4px; }
+        .roll-log-container::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
         .roll-log-title {
-            font-size: 10px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 2px;
-            text-align: left;
+            font-size: 10px; color: #666; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 2px; text-align: left;
         }
         .roll-log-entry {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            padding: 2px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            color: #ddd;
-            text-align: left;
+            display: flex; align-items: center; gap: 8px; font-size: 13px;
+            padding: 2px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #ddd; text-align: left;
         }
-        .roll-log-entry:last-child {
-            border-bottom: none;
-        }
+        .roll-log-entry:last-child { border-bottom: none; }
         .roll-log-entry .roll-player {
-            color: #f1c40f;
-            font-weight: bold;
-            font-size: 12px;
-            max-width: 70px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            color: #f1c40f; font-weight: bold; font-size: 12px; max-width: 70px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        .roll-log-entry .roll-dice {
-            color: #888;
-            font-size: 11px;
-        }
+        .roll-log-entry .roll-dice { color: #888; font-size: 11px; }
         .roll-log-entry .roll-value {
-            color: #fff;
-            font-weight: bold;
-            background: #2a2a2a;
-            padding: 0 8px;
-            border-radius: 4px;
-            min-width: 24px;
-            text-align: center;
-            font-size: 13px;
+            color: #fff; font-weight: bold; background: #2a2a2a; padding: 0 8px;
+            border-radius: 4px; min-width: 24px; text-align: center; font-size: 13px;
         }
-        .roll-log-entry .roll-crit {
-            color: #f1c40f;
-            animation: pulseGold 0.5s ease;
-        }
-        .roll-log-entry .roll-fail {
-            color: #e74c3c;
-            animation: pulseRed 0.5s ease;
-        }
-        .roll-log-empty {
-            color: #555;
-            font-style: italic;
-            font-size: 12px;
-            padding: 4px 0;
-            text-align: center;
-        }
+        .roll-log-entry .roll-crit { color: #f1c40f; animation: pulseGold 0.5s ease; }
+        .roll-log-entry .roll-fail { color: #e74c3c; animation: pulseRed 0.5s ease; }
+        .roll-log-empty { color: #555; font-style: italic; font-size: 12px; padding: 4px 0; text-align: center; }
 
-        @keyframes pulseGold {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); color: #ffd700; }
-            100% { transform: scale(1); }
-        }
-        @keyframes pulseRed {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); color: #ff0000; }
-            100% { transform: scale(1); }
-        }
+        @keyframes pulseGold { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: #ffd700; } 100% { transform: scale(1); } }
+        @keyframes pulseRed { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: #ff0000; } 100% { transform: scale(1); } }
 
-        /* ===== ТОСТ ===== */
         .roll-toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
-            color: #fff;
-            padding: 6px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            border: 1px solid #f1c40f;
-            z-index: 999;
-            animation: slideUp 0.3s ease, fadeOut 3s ease 2.5s forwards;
-            pointer-events: none;
-            max-width: 90%;
-            white-space: nowrap;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85); color: #fff; padding: 6px 16px;
+            border-radius: 8px; font-size: 14px; border: 1px solid #f1c40f;
+            z-index: 999; animation: slideUp 0.3s ease, fadeOut 3s ease 2.5s forwards;
+            pointer-events: none; max-width: 90%; white-space: nowrap;
         }
-        @keyframes slideUp {
-            0% { transform: translateX(-50%) translateY(20px); opacity: 0; }
-            100% { transform: translateX(-50%) translateY(0); opacity: 1; }
-        }
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-        }
+        @keyframes slideUp { 0% { transform: translateX(-50%) translateY(20px); opacity: 0; } 100% { transform: translateX(-50%) translateY(0); opacity: 1; } }
+        @keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
 
-        /* ===== АДАПТАЦИЯ ===== */
         @media (max-width: 600px) {
             h1 { font-size: 16px; margin: 4px 0; }
             .top-bar button { font-size: 11px; padding: 2px 8px; min-height: 26px; }
@@ -532,7 +239,6 @@
             .roll-log-entry { font-size: 11px; }
             .roll-log-entry .roll-player { max-width: 50px; font-size: 10px; }
         }
-
         @media (max-width: 400px) {
             .top-bar button[data-map] { font-size: 9px; padding: 1px 4px; min-height: 20px; }
             .map-controls input[type="range"] { width: 50px; }
@@ -544,7 +250,6 @@
 
     <h1>⚔️ Поле боя</h1>
 
-    <!-- ===== ВВОД НИКА ===== -->
     <div class="nickname-container" id="nicknameContainer">
         <div class="nickname-box">
             <label for="nicknameInput">👤 Введи свой ник:</label>
@@ -554,7 +259,6 @@
         </div>
     </div>
 
-    <!-- ===== ВЕРХНЯЯ ПАНЕЛЬ ===== -->
     <div class="top-bar">
         <span class="player-id" id="playerId">Загрузка...</span>
         <span class="gm-indicator" id="gmIndicator"></span>
@@ -566,7 +270,6 @@
         <button onclick="toggleSnap()" class="active" id="snapToggleBtn">🎯</button>
     </div>
 
-    <!-- ===== ВЫБОР КАРТЫ ===== -->
     <div class="top-bar" style="border-bottom: none; background: #1a1a1a; gap: 4px; padding: 4px 10px;">
         <button onclick="changeMap('forest')" data-map="forest" class="active">🌲 Лес</button>
         <button onclick="changeMap('dungeon')" data-map="dungeon">🏚️ Подземелье</button>
@@ -575,7 +278,6 @@
         <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
     </div>
 
-    <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="map-inner" id="mapInner">
             <div class="map-image-container" id="mapImageContainer">
@@ -586,7 +288,6 @@
         </div>
     </div>
 
-    <!-- ===== УПРАВЛЕНИЕ КАРТОЙ ===== -->
     <div class="map-controls">
         <button onclick="zoomOut()">➖</button>
         <span class="zoom-label" id="zoomLabel">100%</span>
@@ -598,7 +299,6 @@
         <span class="grid-size-label" id="gridSizeLabel">10x6</span>
     </div>
 
-    <!-- ===== КУБИКИ ===== -->
     <div class="dice-controls">
         <div class="dice-area" id="diceDisplay">🎲</div>
         <button class="d20" onclick="rollDice(20)">d20</button>
@@ -610,7 +310,6 @@
         <span class="log" id="log">Привет!</span>
     </div>
 
-    <!-- ===== ВЫБОР ИКОНОК ===== -->
     <div class="icon-picker" id="iconPicker">
         <button onclick="addToken('🧙‍♂️')">🧙‍♂️</button>
         <button onclick="addToken('🏹')">🏹</button>
@@ -625,7 +324,6 @@
         <button onclick="hideIconPicker()" style="background:#c0392b;">✖</button>
     </div>
 
-    <!-- ===== ЛОГ БРОСКОВ ===== -->
     <div class="roll-log-container" id="rollLogContainer">
         <div class="roll-log-title">📜 История бросков</div>
         <div id="rollLogEntries">
@@ -635,7 +333,7 @@
 
     <script>
         // ============================================
-        // ТВОЙ КОНФИГ FIREBASE
+        // FIREBASE КОНФИГ
         // ============================================
         const firebaseConfig = {
             apiKey: "AIzaSyCfb0M7LS3nzPcabFuvekS815GvH1fUK_Q",
@@ -652,9 +350,9 @@
         const db = firebase.database();
 
         // ============================================
-        // РАБОТА С НИКОМ И GM
+        // НИК И GM (пароль 123)
         // ============================================
-        const GM_PASSWORD = 'gm123';
+        const GM_PASSWORD = '123';
         let isGM = false;
         let playerName = localStorage.getItem('dnd_player_name') || '';
         const randomId = 'Player_' + Math.random().toString(36).substring(2, 6);
@@ -727,7 +425,7 @@
         }
 
         // ============================================
-        // УПРАВЛЕНИЕ КАРТОЙ (Zoom + Pan с ограничением)
+        // КАРТА — ЗУМ И ПАН (без жёстких ограничений)
         // ============================================
         let scale = 1;
         let panX = 0;
@@ -738,44 +436,15 @@
 
         const mapWrapper = document.getElementById('mapWrapper');
         const mapInner = document.getElementById('mapInner');
-        const mapImageContainer = document.getElementById('mapImageContainer');
         const mapImage = document.getElementById('mapImage');
         const zoomLabel = document.getElementById('zoomLabel');
 
-        // Получаем границы карты для ограничения панорамирования
-        function getMapBounds() {
-            const rect = mapWrapper.getBoundingClientRect();
-            // При scale=1 картинка влезает целиком, при scale>1 она увеличивается
-            // Вычисляем максимальное смещение, чтобы края карты не выходили за пределы окна
-            const imageRect = mapImage.getBoundingClientRect();
-            const wrapperRect = mapWrapper.getBoundingClientRect();
-            
-            // Размер картинки внутри контейнера (с учётом object-fit: contain)
-            const containerW = mapWrapper.clientWidth;
-            const containerH = mapWrapper.clientHeight;
-            
-            // Размер картинки в пикселях (естественный размер * scale)
-            const imageW = mapImage.naturalWidth || containerW;
-            const imageH = mapImage.naturalHeight || containerH;
-            
-            // Масштабируем относительно контейнера
-            const scaleX = containerW / imageW;
-            const scaleY = containerH / imageH;
-            const fitScale = Math.min(scaleX, scaleY);
-            
-            const displayW = imageW * fitScale * scale;
-            const displayH = imageH * fitScale * scale;
-            
-            const maxPanX = Math.max(0, (displayW - containerW) / 2);
-            const maxPanY = Math.max(0, (displayH - containerH) / 2);
-            
-            return { maxPanX, maxPanY };
-        }
-
+        // Простое ограничение — чтобы карта не вылетала совсем
         function clampPan() {
-            const bounds = getMapBounds();
-            panX = Math.max(-bounds.maxPanX, Math.min(bounds.maxPanX, panX));
-            panY = Math.max(-bounds.maxPanY, Math.min(bounds.maxPanY, panY));
+            // Мягкое ограничение: не даём уехать слишком далеко
+            const maxPan = 500;
+            panX = Math.max(-maxPan, Math.min(maxPan, panX));
+            panY = Math.max(-maxPan, Math.min(maxPan, panY));
         }
 
         function updateTransform() {
@@ -802,7 +471,7 @@
             updateTransform();
         }
 
-        // ===== ПЕРЕТАСКИВАНИЕ КАРТЫ (мышь) =====
+        // ===== МЫШЬ =====
         mapWrapper.addEventListener('mousedown', function(e) {
             if (e.target.closest('.token')) return;
             isDraggingMap = true;
@@ -827,7 +496,7 @@
             mapWrapper.style.cursor = 'grab';
         });
 
-        // ===== ПЕРЕТАСКИВАНИЕ КАРТЫ (touch) =====
+        // ===== TOUCH =====
         mapWrapper.addEventListener('touchstart', function(e) {
             if (e.target.closest('.token')) return;
             if (e.touches.length === 1) {
@@ -865,13 +534,10 @@
             lastTouchDist = 0;
         }, { passive: true });
 
-        // Обновляем при изменении размера окна
-        window.addEventListener('resize', function() {
-            updateTransform();
-        });
+        window.addEventListener('resize', updateTransform);
 
         // ============================================
-        // СЕТКА (синхронизируется через Firebase)
+        // СЕТКА (синхронизация через Firebase)
         // ============================================
         let snapEnabled = true;
         let gridVisible = true;
@@ -881,11 +547,8 @@
         const gridOverlay = document.getElementById('gridOverlay');
         const gridSizeSlider = document.getElementById('gridSizeSlider');
         const gridSizeLabel = document.getElementById('gridSizeLabel');
-
-        // Ссылка на размер сетки в Firebase
         const gridSizeRef = db.ref('gridSize');
 
-        // Загружаем размер сетки из Firebase
         gridSizeRef.on('value', function(snapshot) {
             const data = snapshot.val();
             if (data) {
@@ -922,13 +585,11 @@
         function updateTokenSizes() {
             const cellW = 100 / gridCols;
             const cellH = 100 / gridRows;
-            // Фигурка занимает ~55% от клетки (уменьшено, чтобы не перекрывать сетку)
             const sizePercent = Math.min(cellW, cellH) * 0.55;
             
             document.querySelectorAll('.token').forEach(token => {
                 token.style.width = sizePercent + '%';
                 token.style.height = sizePercent + '%';
-                // Размер шрифта тоже пропорционален
                 const fontSize = Math.max(10, Math.min(28, sizePercent * 0.8));
                 token.style.fontSize = fontSize + 'px';
                 token.style.minWidth = '18px';
@@ -980,7 +641,7 @@
         }
 
         // ============================================
-        // ФИГУРКИ
+        // ФИГУРКИ (исправлено добавление)
         // ============================================
         const tokensLayer = document.getElementById('tokensLayer');
         let tokens = {};
@@ -1112,15 +773,22 @@
         }
 
         function addToken(icon) {
-            const offsetX = (Math.random() - 0.5) * 8;
-            const offsetY = (Math.random() - 0.5) * 8;
+            // Добавляем фигурку с рандомным смещением
+            const offsetX = (Math.random() - 0.5) * 10;
+            const offsetY = (Math.random() - 0.5) * 10;
             const pos = getSnappedPosition(50 + offsetX, 50 + offsetY);
             const id = nextId++;
             const tokenData = { icon: icon, x: pos.x, y: pos.y };
+            
             isLocalUpdate = true;
             tokensRef.child(id).set(tokenData).then(() => {
                 isLocalUpdate = false;
             });
+            
+            // Добавляем в локальный кэш сразу, чтобы не ждать ответа
+            tokens[id] = tokenData;
+            renderToken(id);
+            
             hideIconPicker();
             if (navigator.vibrate) navigator.vibrate(20);
             document.getElementById('log').textContent = '➕ Добавлен ' + icon;
