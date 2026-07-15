@@ -7,7 +7,6 @@
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
     <style>
-        /* ===== ВЕСЬ CSS ТОТ ЖЕ, ЧТО И В ПРЕДЫДУЩЕМ СООБЩЕНИИ ===== */
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
             font-family: Arial, sans-serif; background: #1a1a1a; color: #eee;
@@ -56,6 +55,7 @@
         .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
         .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
+        /* ===== GM-элементы скрыты по умолчанию ===== */
         .gm-only { display: none; }
         .gm-only.visible { display: inline-block; }
         .gm-only-flex { display: none; }
@@ -127,6 +127,7 @@
         .token:active { cursor: grabbing; filter: brightness(1.3); z-index: 20; }
         .token.snap { transition: left 0.1s ease, top 0.1s ease; }
 
+        /* ===== КОНТРОЛЛЫ КАРТЫ (ВИДНЫ ТОЛЬКО GM) ===== */
         .map-controls {
             display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
             gap: 4px 8px; padding: 6px 10px; background: #222; border-bottom: 1px solid #333;
@@ -261,6 +262,7 @@
         </div>
     </div>
 
+    <!-- ===== КОНТРОЛЛЫ КАРТЫ (ВИДНЫ ТОЛЬКО GM) ===== -->
     <div class="map-controls gm-only-flex" id="mapControls">
         <button onclick="zoomOut()">➖</button>
         <span class="zoom-label" id="zoomLabel">100%</span>
@@ -439,7 +441,6 @@
         });
         window.addEventListener('mouseup', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
 
-        // ===== TOUCH =====
         wrapper.addEventListener('touchstart', (e) => {
             if (e.target.closest('.token')) return;
             if (e.touches.length === 1) {
@@ -704,16 +705,11 @@
             document.getElementById('iconPicker').classList.remove('active');
         }
 
-        // ====================================================================
-        // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК — ТЕПЕРЬ ДЛЯ ВСЕХ! =====
-        // ====================================================================
+        // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК — ДЛЯ ВСЕХ! =====
         function startDrag(e, id) {
             e.preventDefault();
             const token = tokens[id];
             if (!token) return;
-
-            // ⚠️ УБРАЛ ПРОВЕРКУ НА GM! Теперь все могут двигать фигурки!
-            // if (!isGM) return; // <-- ЭТО БЫЛО УДАЛЕНО
 
             const rect = wrapper.getBoundingClientRect();
             let cx, cy;
@@ -766,7 +762,6 @@
             window.removeEventListener('touchmove', onDrag);
             window.removeEventListener('touchend', endDrag);
         }
-        // ====================================================================
 
         // ==================== КАРТЫ ====================
         let currentMap = 'forest', isLocalMapUpdate = false;
