@@ -77,7 +77,6 @@
             background: #1a1a1a; pointer-events: none;
         }
 
-        /* ===== СЕТКА — НА КАРТИНКЕ, НЕ ВЫХОДИТ ЗА ГРАНИЦЫ ===== */
         .grid-container {
             position: absolute;
             top: 0; left: 0;
@@ -439,7 +438,7 @@
         wrapper.addEventListener('touchend', () => { isDragging = false; lastTouchDist = 0; }, { passive: true });
         window.addEventListener('resize', updateTransform);
 
-        // ==================== СЕТКА (исправлена) ====================
+        // ==================== СЕТКА ====================
         let snapEnabled = true, gridVisible = true;
         let gridCols = 10, gridRows = 6;
         const gridOverlay = document.getElementById('gridOverlay');
@@ -530,9 +529,13 @@
             document.getElementById('log').textContent = '🎯 Прилипание: ' + (snapEnabled ? 'Вкл' : 'Выкл');
         }
 
-        // ==================== ФИГУРКИ (исправлено сохранение) ====================
+        // ==================== ФИГУРКИ (ИСПРАВЛЕНО!) ====================
         const tokensLayer = document.getElementById('tokensLayer');
-        let tokens = {}, nextId = 1, draggedToken = null, dragOffX = 0, dragOffY = 0, isLocalUpdate = false;
+        let tokens = {};
+        let nextId = 1;
+        let draggedToken = null;
+        let dragOffX = 0, dragOffY = 0;
+        let isLocalUpdate = false;
         const tokensRef = db.ref('tokens');
 
         function getSnapped(x, y) {
@@ -555,25 +558,29 @@
             renderTokens();
         }
 
-        // ===== ЗАГРУЗКА =====
-        tokensRef.on('value', (snapshot) => {
-            if (isLocalUpdate) return;
-            const data = snapshot.val();
-            if (data) {
-                tokens = data;
-                // Вычисляем следующий ID
-                nextId = 1;
-                Object.keys(tokens).forEach(id => {
-                    const num = parseInt(id);
-                    if (num >= nextId) nextId = num + 1;
-                });
-            } else {
-                tokens = {};
-                nextId = 1;
-            }
-            renderTokens();
-            setTimeout(updateTokenSizes, 50);
-        });
+        // ===== ЗАГРУЗКА — ТОЛЬКО ОДИН РАЗ =====
+        function loadTokens() {
+            tokensRef.on('value', (snapshot) => {
+                if (isLocalUpdate) return;
+                const data = snapshot.val();
+                if (data) {
+                    tokens = data;
+                    // Вычисляем следующий ID
+                    let maxId = 0;
+                    Object.keys(tokens).forEach(id => {
+                        const num = parseInt(id);
+                        if (num > maxId) maxId = num;
+                    });
+                    nextId = maxId + 1;
+                } else {
+                    // Если данных нет, просто очищаем
+                    tokens = {};
+                    nextId = 1;
+                }
+                renderTokens();
+                setTimeout(updateTokenSizes, 50);
+            });
+        }
 
         function renderToken(id) {
             const token = tokens[id];
@@ -632,12 +639,15 @@
             const pos = getSnapped(50 + (Math.random() - 0.5) * 10, 50 + (Math.random() - 0.5) * 10);
             const id = nextId++;
             const data = { icon, x: pos.x, y: pos.y };
+            
             // Сохраняем в Firebase
             isLocalUpdate = true;
             tokensRef.child(id).set(data).then(() => { isLocalUpdate = false; });
+            
             // Добавляем локально
             tokens[id] = data;
             renderToken(id);
+            
             hideIconPicker();
             if (navigator.vibrate) navigator.vibrate(20);
             document.getElementById('log').textContent = '➕ Добавлен ' + icon;
@@ -815,6 +825,7 @@
         });
 
         // ==================== СТАРТ ====================
+        loadTokens(); // Запускаем загрузку токенов
         updateTransform();
         if (!playerName) document.getElementById('log').textContent = '👋 Введи свой ник!';
     </script>
