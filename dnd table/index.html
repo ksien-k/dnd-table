@@ -240,7 +240,7 @@
         <button onclick="toggleSnap()" class="gm-only active" id="snapToggleBtn">🎯</button>
     </div>
 
-    <!-- ===== ВЫБОР КАРТЫ (GM) ===== -->
+    <!-- ===== GM: ВЫБОР КАРТЫ ===== -->
     <div class="top-bar gm-only-flex" id="mapSelector" style="border-bottom: none; background: #1a1a1a; gap: 4px; padding: 4px 10px;">
         <button onclick="changeMap('forest')" data-map="forest" class="active">🌲 Лес</button>
         <button onclick="changeMap('dungeon')" data-map="dungeon">🏚️ Подземелье</button>
@@ -249,6 +249,7 @@
         <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
     </div>
 
+    <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="map-viewport" id="mapViewport">
             <div class="map-content">
@@ -261,7 +262,7 @@
         </div>
     </div>
 
-    <!-- ===== GM КОНТРОЛЛЫ ===== -->
+    <!-- ===== GM: КОНТРОЛЛЫ КАРТЫ ===== -->
     <div class="map-controls gm-only-flex" id="mapControls">
         <button onclick="zoomOut()">➖</button>
         <span class="zoom-label" id="zoomLabel">100%</span>
@@ -279,6 +280,7 @@
         <span class="size-label" id="tokenSizeLabel">55%</span>
     </div>
 
+    <!-- ===== КУБИКИ ===== -->
     <div class="dice-controls">
         <div class="dice-area" id="diceDisplay">🎲</div>
         <button class="d20" onclick="rollDice(20)">d20</button>
@@ -290,6 +292,7 @@
         <span class="log" id="log">Привет!</span>
     </div>
 
+    <!-- ===== GM: ВЫБОР ИКОНОК ===== -->
     <div class="icon-picker gm-only" id="iconPicker">
         <button onclick="addToken('🧙‍♂️')">🧙‍♂️</button>
         <button onclick="addToken('🏹')">🏹</button>
@@ -304,6 +307,7 @@
         <button onclick="hideIconPicker()" style="background:#c0392b;">✖</button>
     </div>
 
+    <!-- ===== ЛОГ БРОСКОВ ===== -->
     <div class="roll-log-container" id="rollLogContainer">
         <div class="roll-log-title">📜 История бросков</div>
         <div id="rollLogEntries"><div class="roll-log-empty">Броски будут здесь...</div></div>
@@ -575,7 +579,7 @@
         let tokens = {};
         let nextId = 1;
         let draggedToken = null;
-        let dragOffX = 0, dragOffY = 0;
+        let dragOffsetX = 0, dragOffsetY = 0;
         let isLocalUpdate = false;
         let isFirstLoad = true;
         const tokensRef = db.ref('tokens');
@@ -704,7 +708,7 @@
             document.getElementById('iconPicker').classList.remove('active');
         }
 
-        // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК — ИСПРАВЛЕНО! =====
+        // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК (ИСПРАВЛЕНО!) =====
         function startDrag(e, id) {
             e.preventDefault();
             const token = tokens[id];
@@ -720,11 +724,11 @@
                 cy = e.clientY;
             }
 
-            // Вычисляем, где находится фигурка относительно пальца
+            // Вычисляем смещение пальца относительно центра фигурки
             const tx = (cx - rect.left) / rect.width * 100;
             const ty = (cy - rect.top) / rect.height * 100;
-            dragOffX = tx - token.x;
-            dragOffY = ty - token.y;
+            dragOffsetX = tx - token.x;
+            dragOffsetY = ty - token.y;
 
             draggedToken = id;
             window.addEventListener('mousemove', onDrag);
@@ -749,8 +753,8 @@
                 cy = e.clientY;
             }
 
-            let nx = (cx - rect.left) / rect.width * 100 - dragOffX;
-            let ny = (cy - rect.top) / rect.height * 100 - dragOffY;
+            let nx = (cx - rect.left) / rect.width * 100 - dragOffsetX;
+            let ny = (cy - rect.top) / rect.height * 100 - dragOffsetY;
 
             // Ограничиваем, чтобы фигурка не вылетала за карту
             nx = Math.max(0, Math.min(100, nx));
