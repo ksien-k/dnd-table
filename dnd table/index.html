@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
     <style>
+        /* ===== ВЕСЬ CSS ТОТ ЖЕ, ЧТО И В ПРЕДЫДУЩЕМ СООБЩЕНИИ ===== */
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
             font-family: Arial, sans-serif; background: #1a1a1a; color: #eee;
@@ -232,7 +233,7 @@
     <div class="top-bar">
         <span class="player-id" id="playerId">Загрузка...</span>
         <span class="gm-indicator" id="gmIndicator"></span>
-        <button onclick="toggleGM()" class="gm-btn gm-only" id="gmToggleBtn">👑 GM</button>
+        <button onclick="toggleGM()" class="gm-btn" id="gmToggleBtn">👑 GM</button>
         <button onclick="showChangeName()" class="gm-only">✏️ Сменить ник</button>
         <button onclick="showIconPicker()" class="gm-only">➕ Добавить</button>
         <button class="danger gm-only" onclick="clearTokens()">🗑️</button>
@@ -400,7 +401,7 @@
             updateMapButtons();
         }
 
-        // ==================== КАРТА: ZOOM / PAN (ВСЕ МОГУТ ДВИГАТЬ!) ====================
+        // ==================== КАРТА: ZOOM / PAN ====================
         let scale = 1, panX = 0, panY = 0;
         let isDragging = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
         const wrapper = document.getElementById('mapWrapper');
@@ -449,13 +450,11 @@
         }, { passive: true });
 
         wrapper.addEventListener('touchmove', (e) => {
-            // Панорамирование одним пальцем — ДЛЯ ВСЕХ!
             if (e.touches.length === 1 && isDragging) {
                 panX = startPanX + (e.touches[0].clientX - startX);
                 panY = startPanY + (e.touches[0].clientY - startY);
                 updateTransform();
             }
-            // Зум двумя пальцами — ДЛЯ ВСЕХ!
             if (e.touches.length === 2) {
                 const t1 = e.touches[0], t2 = e.touches[1];
                 const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
@@ -705,12 +704,17 @@
             document.getElementById('iconPicker').classList.remove('active');
         }
 
-        // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК =====
+        // ====================================================================
+        // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК — ТЕПЕРЬ ДЛЯ ВСЕХ! =====
+        // ====================================================================
         function startDrag(e, id) {
             e.preventDefault();
             const token = tokens[id];
             if (!token) return;
-            if (!isGM) return;
+
+            // ⚠️ УБРАЛ ПРОВЕРКУ НА GM! Теперь все могут двигать фигурки!
+            // if (!isGM) return; // <-- ЭТО БЫЛО УДАЛЕНО
+
             const rect = wrapper.getBoundingClientRect();
             let cx, cy;
             if (e.type === 'touchstart') { cx = e.touches[0].clientX;
@@ -762,6 +766,7 @@
             window.removeEventListener('touchmove', onDrag);
             window.removeEventListener('touchend', endDrag);
         }
+        // ====================================================================
 
         // ==================== КАРТЫ ====================
         let currentMap = 'forest', isLocalMapUpdate = false;
