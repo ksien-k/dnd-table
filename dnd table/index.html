@@ -529,13 +529,14 @@
             document.getElementById('log').textContent = '🎯 Прилипание: ' + (snapEnabled ? 'Вкл' : 'Выкл');
         }
 
-        // ==================== ФИГУРКИ (ИСПРАВЛЕНО!) ====================
+        // ==================== ФИГУРКИ (ОКОНЧАТЕЛЬНО ИСПРАВЛЕНО) ====================
         const tokensLayer = document.getElementById('tokensLayer');
         let tokens = {};
         let nextId = 1;
         let draggedToken = null;
         let dragOffX = 0, dragOffY = 0;
         let isLocalUpdate = false;
+        let isFirstLoad = true; // <-- КЛЮЧЕВОЙ ФЛАГ
         const tokensRef = db.ref('tokens');
 
         function getSnapped(x, y) {
@@ -549,6 +550,7 @@
         }
 
         function recalcTokenPositions() {
+            if (Object.keys(tokens).length === 0) return; // <-- НЕ СОХРАНЯЕМ ПУСТОТУ!
             Object.values(tokens).forEach(t => {
                 const pos = getSnapped(t.x, t.y);
                 t.x = pos.x;
@@ -558,29 +560,30 @@
             renderTokens();
         }
 
-        // ===== ЗАГРУЗКА — ТОЛЬКО ОДИН РАЗ =====
-        function loadTokens() {
-            tokensRef.on('value', (snapshot) => {
-                if (isLocalUpdate) return;
-                const data = snapshot.val();
-                if (data) {
-                    tokens = data;
-                    // Вычисляем следующий ID
-                    let maxId = 0;
-                    Object.keys(tokens).forEach(id => {
-                        const num = parseInt(id);
-                        if (num > maxId) maxId = num;
-                    });
-                    nextId = maxId + 1;
-                } else {
-                    // Если данных нет, просто очищаем
-                    tokens = {};
-                    nextId = 1;
-                }
-                renderTokens();
-                setTimeout(updateTokenSizes, 50);
-            });
-        }
+        // ===== ЗАГРУЗКА =====
+        tokensRef.on('value', (snapshot) => {
+            if (isLocalUpdate) return;
+            const data = snapshot.val();
+            
+            if (data) {
+                tokens = data;
+                // Вычисляем следующий ID
+                let maxId = 0;
+                Object.keys(tokens).forEach(id => {
+                    const num = parseInt(id);
+                    if (num > maxId) maxId = num;
+                });
+                nextId = maxId + 1;
+            } else {
+                // Если данных нет — просто оставляем пустой объект, НО НЕ СОХРАНЯЕМ!
+                tokens = {};
+                nextId = 1;
+            }
+            
+            isFirstLoad = false;
+            renderTokens();
+            setTimeout(updateTokenSizes, 50);
+        });
 
         function renderToken(id) {
             const token = tokens[id];
@@ -621,6 +624,11 @@
         }
 
         function saveTokens() {
+            // НЕ СОХРАНЯЕМ ПУСТОЙ ОБЪЕКТ!
+            if (Object.keys(tokens).length === 0 && !isFirstLoad) {
+                // Если кто-то пытается сохранить пустоту — игнорируем
+                return;
+            }
             isLocalUpdate = true;
             tokensRef.set(tokens).then(() => { isLocalUpdate = false; });
         }
@@ -825,7 +833,6 @@
         });
 
         // ==================== СТАРТ ====================
-        loadTokens(); // Запускаем загрузку токенов
         updateTransform();
         if (!playerName) document.getElementById('log').textContent = '👋 Введи свой ник!';
     </script>
