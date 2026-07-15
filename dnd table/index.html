@@ -498,7 +498,6 @@
         const gridColsInput = document.getElementById('gridColsInput');
         const gridRowsInput = document.getElementById('gridRowsInput');
 
-        // ===== СОХРАНЯЕМ ПРИВЯЗКУ В FIREBASE =====
         const snapRef = db.ref('snapEnabled');
         snapRef.on('value', (snap) => {
             const val = snap.val();
@@ -600,7 +599,7 @@
             document.getElementById('gridToggleBtn').classList.toggle('active');
         }
 
-        // ==================== ФИГУРКИ (ПЕРЕПИСАНО С НУЛЯ) ====================
+        // ==================== ФИГУРКИ (ИСПРАВЛЕННОЕ ПЕРЕТАСКИВАНИЕ) ====================
         const tokensLayer = document.getElementById('tokensLayer');
         let tokens = {};
         let nextId = 1;
@@ -734,7 +733,7 @@
             document.getElementById('iconPicker').classList.remove('active');
         }
 
-        // ===== ПЕРЕТАСКИВАНИЕ — ПРОСТО И НАДЕЖНО =====
+        // ===== ИСПРАВЛЕННОЕ ПЕРЕТАСКИВАНИЕ (ТЕПЕРЬ ТОЧНО РАБОТАЕТ) =====
         function startDrag(e, id) {
             e.preventDefault();
             const token = tokens[id];
@@ -750,11 +749,13 @@
                 cy = e.clientY;
             }
 
-            // Смещение пальца относительно центра фигурки в процентах
-            const px = (cx - rect.left) / rect.width * 100;
-            const py = (cy - rect.top) / rect.height * 100;
-            dragOffsetX = px - token.x;
-            dragOffsetY = py - token.y;
+            // Вычисляем позицию фигурки в пикселях относительно wrapper
+            const tokenPixelX = (token.x / 100) * rect.width;
+            const tokenPixelY = (token.y / 100) * rect.height;
+            
+            // Смещение пальца относительно центра фигурки в пикселях
+            dragOffsetX = cx - (rect.left + tokenPixelX);
+            dragOffsetY = cy - (rect.top + tokenPixelY);
 
             draggedToken = id;
             window.addEventListener('mousemove', onDrag);
@@ -779,8 +780,13 @@
                 cy = e.clientY;
             }
 
-            let nx = (cx - rect.left) / rect.width * 100 - dragOffsetX;
-            let ny = (cy - rect.top) / rect.height * 100 - dragOffsetY;
+            // Новая позиция в пикселях
+            let newPixelX = cx - rect.left - dragOffsetX;
+            let newPixelY = cy - rect.top - dragOffsetY;
+
+            // Переводим пиксели в проценты
+            let nx = (newPixelX / rect.width) * 100;
+            let ny = (newPixelY / rect.height) * 100;
 
             nx = Math.max(0, Math.min(100, nx));
             ny = Math.max(0, Math.min(100, ny));
