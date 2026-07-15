@@ -69,28 +69,47 @@
             position: relative; width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
         }
-        .map-image { width: 100%; height: 100%; object-fit: contain; display: block; background: #1a1a1a; pointer-events: none; }
+        .map-image {
+            width: 100%; height: 100%; object-fit: contain; display: block;
+            background: #1a1a1a; pointer-events: none;
+        }
+
+        /* ===== СЕТКА — СТРОГО ПОВЕРХ КАРТИНКИ ===== */
         .grid-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: grid; pointer-events: none; z-index: 5;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: grid;
+            pointer-events: none;
+            z-index: 5;
         }
         .grid-overlay .cell {
-            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.02);
-            aspect-ratio: 1 / 1;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.02);
+            width: 100%; height: 100%;
         }
         .grid-overlay.hidden { display: none; }
 
         .tokens-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            touch-action: none; z-index: 10; pointer-events: none;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            touch-action: none;
+            z-index: 10;
+            pointer-events: none;
         }
         .token {
-            position: absolute; display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.6); border-radius: 50%; border: 2px solid white;
-            cursor: grab; touch-action: none; text-shadow: 0 0 5px black;
+            position: absolute;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: grab;
+            touch-action: none;
+            text-shadow: 0 0 5px black;
             transform: translate(-50%, -50%);
-            will-change: transform, width, height, font-size;
             pointer-events: all;
+            will-change: transform, width, height, font-size;
         }
         .token:active { cursor: grabbing; filter: brightness(1.3); z-index: 20; }
         .token.snap { transition: left 0.1s ease, top 0.1s ease; }
@@ -105,7 +124,12 @@
             cursor: pointer; touch-action: manipulation; min-height: 32px;
         }
         .map-controls .zoom-label { color: #aaa; font-size: 13px; min-width: 40px; }
-        .map-controls input[type="range"] { width: 100px; accent-color: #f1c40f; cursor: pointer; }
+        .map-controls input[type="number"] {
+            width: 50px; background: #1a1a1a; border: 2px solid #444; color: #fff;
+            border-radius: 8px; padding: 4px 6px; text-align: center; font-size: 14px;
+        }
+        .map-controls input[type="number"]:focus { border-color: #f1c40f; outline: none; }
+        .map-controls .grid-label { color: #888; font-size: 12px; }
         .map-controls .grid-size-label { color: #aaa; font-size: 13px; min-width: 50px; }
 
         .dice-controls {
@@ -168,7 +192,7 @@
             .top-bar button { font-size: 11px; padding: 2px 8px; min-height: 26px; }
             .top-bar button[data-map] { font-size: 10px; padding: 2px 6px; min-height: 24px; }
             .map-controls button { font-size: 12px; padding: 2px 8px; min-height: 28px; }
-            .map-controls input[type="range"] { width: 70px; }
+            .map-controls input[type="number"] { width: 40px; font-size: 12px; }
             .dice-controls button { font-size: 14px; padding: 4px 10px; min-height: 32px; min-width: 32px; }
             .dice-controls .dice-area { font-size: 26px; padding: 2px 12px; min-width: 44px; }
             .roll-log-container { max-height: 100px; }
@@ -224,9 +248,11 @@
         <button onclick="zoomIn()">➕</button>
         <button onclick="resetZoom()">⟲</button>
         <span style="color:#444;">|</span>
-        <span>📐</span>
-        <input type="range" id="gridSizeSlider" min="4" max="40" value="10" step="1">
-        <span class="grid-size-label" id="gridSizeLabel">10x6</span>
+        <span class="grid-label">📐 Столбцов:</span>
+        <input type="number" id="gridColsInput" min="4" max="40" value="10">
+        <span class="grid-label">Строк:</span>
+        <input type="number" id="gridRowsInput" min="3" max="24" value="6">
+        <button onclick="applyGridSize()" style="font-size:12px; padding: 2px 10px; min-height: 28px;">Применить</button>
     </div>
 
     <div class="dice-controls">
@@ -372,7 +398,6 @@
         function zoomOut() { scale = Math.max(0.3, scale - 0.15); updateTransform(); }
         function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
-        // --- Мышь ---
         wrapper.addEventListener('mousedown', (e) => {
             if (e.target.closest('.token')) return;
             isDragging = true;
@@ -388,7 +413,6 @@
         });
         window.addEventListener('mouseup', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
 
-        // --- Touch ---
         wrapper.addEventListener('touchstart', (e) => {
             if (e.target.closest('.token')) return;
             if (e.touches.length === 1) {
@@ -417,28 +441,33 @@
         wrapper.addEventListener('touchend', () => { isDragging = false; lastTouchDist = 0; }, { passive: true });
         window.addEventListener('resize', updateTransform);
 
-        // ==================== СЕТКА ====================
-        let snapEnabled = true, gridVisible = true, gridCols = 10, gridRows = 6;
+        // ==================== СЕТКА (ручной ввод) ====================
+        let snapEnabled = true, gridVisible = true;
+        let gridCols = 10, gridRows = 6;
         const gridOverlay = document.getElementById('gridOverlay');
-        const gridSizeSlider = document.getElementById('gridSizeSlider');
-        const gridSizeLabel = document.getElementById('gridSizeLabel');
-        const gridSizeRef = db.ref('gridSize');
+        const gridColsInput = document.getElementById('gridColsInput');
+        const gridRowsInput = document.getElementById('gridRowsInput');
 
+        // Загружаем сохранённый размер сетки из Firebase
+        const gridSizeRef = db.ref('gridSize');
         gridSizeRef.on('value', (snap) => {
             const data = snap.val();
             if (data) {
-                const nc = data.cols || 10, nr = data.rows || 6;
+                const nc = data.cols || 10;
+                const nr = data.rows || 6;
                 if (nc !== gridCols || nr !== gridRows) {
                     gridCols = nc; gridRows = nr;
-                    gridSizeSlider.value = gridCols;
-                    gridSizeLabel.textContent = gridCols + 'x' + gridRows;
+                    gridColsInput.value = gridCols;
+                    gridRowsInput.value = gridRows;
                     buildGrid();
                     recalcTokenPositions();
                 }
             }
         });
 
-        function saveGridSize() { gridSizeRef.set({ cols: gridCols, rows: gridRows }); }
+        function saveGridSize() {
+            gridSizeRef.set({ cols: gridCols, rows: gridRows });
+        }
 
         function buildGrid() {
             gridOverlay.innerHTML = '';
@@ -452,45 +481,51 @@
         }
         buildGrid();
 
+        function applyGridSize() {
+            if (!isGM) {
+                document.getElementById('log').textContent = '⛔ Только GM может менять сетку!';
+                return;
+            }
+            let nc = parseInt(gridColsInput.value);
+            let nr = parseInt(gridRowsInput.value);
+            if (isNaN(nc) || nc < 4) nc = 4;
+            if (isNaN(nr) || nr < 3) nr = 3;
+            if (nc > 40) nc = 40;
+            if (nr > 24) nr = 24;
+            gridCols = nc; gridRows = nr;
+            gridColsInput.value = gridCols;
+            gridRowsInput.value = gridRows;
+            buildGrid();
+            recalcTokenPositions();
+            saveGridSize();
+            document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
+        }
+
+        // По нажатию Enter в полях ввода
+        gridColsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyGridSize(); });
+        gridRowsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyGridSize(); });
+
         function updateTokenSizes() {
-            const cellW = 100 / gridCols, cellH = 100 / gridRows;
+            const cellW = 100 / gridCols;
+            const cellH = 100 / gridRows;
             const size = Math.min(cellW, cellH) * 0.55;
             document.querySelectorAll('.token').forEach(t => {
                 t.style.width = size + '%';
                 t.style.height = size + '%';
                 t.style.fontSize = Math.max(10, Math.min(28, size * 0.8)) + 'px';
-                t.style.minWidth = '18px'; t.style.minHeight = '18px';
-                t.style.maxWidth = '50px'; t.style.maxHeight = '50px';
+                t.style.minWidth = '18px';
+                t.style.minHeight = '18px';
+                t.style.maxWidth = '50px';
+                t.style.maxHeight = '50px';
             });
         }
-
-        gridSizeSlider.addEventListener('change', function() {
-            if (!isGM) {
-                document.getElementById('log').textContent = '⛔ Только GM может менять сетку!';
-                this.value = gridCols;
-                return;
-            }
-            const nc = parseInt(this.value);
-            const nr = Math.round(nc * 0.6);
-            if (nr < 3) return;
-            gridCols = nc; gridRows = nr;
-            gridSizeLabel.textContent = gridCols + 'x' + gridRows;
-            buildGrid();
-            recalcTokenPositions();
-            saveGridSize();
-            document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
-        });
-        gridSizeSlider.addEventListener('input', function() {
-            const nc = parseInt(this.value);
-            const nr = Math.round(nc * 0.6);
-            if (nr >= 3) gridSizeLabel.textContent = nc + 'x' + nr;
-        });
 
         function toggleGrid() {
             gridVisible = !gridVisible;
             gridOverlay.classList.toggle('hidden');
             document.getElementById('gridToggleBtn').classList.toggle('active');
         }
+
         function toggleSnap() {
             snapEnabled = !snapEnabled;
             document.getElementById('snapToggleBtn').classList.toggle('active');
@@ -507,19 +542,22 @@
             if (!snapEnabled) return { x, y };
             const cw = 100 / gridCols, ch = 100 / gridRows;
             const col = Math.round(x / cw), row = Math.round(y / ch);
-            return { x: Math.max(0, Math.min(100, col * cw + cw/2)), y: Math.max(0, Math.min(100, row * ch + ch/2)) };
+            return {
+                x: Math.max(0, Math.min(100, col * cw + cw / 2)),
+                y: Math.max(0, Math.min(100, row * ch + ch / 2))
+            };
         }
 
         function recalcTokenPositions() {
             Object.values(tokens).forEach(t => {
                 const pos = getSnapped(t.x, t.y);
-                t.x = pos.x; t.y = pos.y;
+                t.x = pos.x;
+                t.y = pos.y;
             });
             saveTokens();
             renderTokens();
         }
 
-        // Загрузка (один раз)
         tokensRef.on('value', (snapshot) => {
             if (isLocalUpdate) return;
             const data = snapshot.val();
@@ -548,7 +586,10 @@
                 el.dataset.id = id;
                 el.addEventListener('dblclick', () => deleteToken(id));
                 el.addEventListener('touchstart', (e) => {
-                    const timer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(50); deleteToken(id); }, 800);
+                    const timer = setTimeout(() => {
+                        if (navigator.vibrate) navigator.vibrate(50);
+                        deleteToken(id);
+                    }, 800);
                     el._timer = timer;
                 });
                 el.addEventListener('touchend', () => clearTimeout(el._timer));
@@ -578,7 +619,10 @@
         }
 
         function deleteToken(id) {
-            if (!isGM) { document.getElementById('log').textContent = '⛔ Только GM может удалять!'; return; }
+            if (!isGM) {
+                document.getElementById('log').textContent = '⛔ Только GM может удалять!';
+                return;
+            }
             isLocalUpdate = true;
             tokensRef.child(id).remove().then(() => { isLocalUpdate = false; });
             document.getElementById('log').textContent = '🗑️ Удалён персонаж';
@@ -598,7 +642,10 @@
         }
 
         function clearTokens() {
-            if (!isGM) { document.getElementById('log').textContent = '⛔ Только GM может очищать!'; return; }
+            if (!isGM) {
+                document.getElementById('log').textContent = '⛔ Только GM может очищать!';
+                return;
+            }
             if (Object.keys(tokens).length === 0) return;
             if (confirm('Удалить всех персонажей?')) {
                 isLocalUpdate = true;
@@ -617,11 +664,13 @@
             if (!token) return;
             const rect = wrapper.getBoundingClientRect();
             let cx, cy;
-            if (e.type === 'touchstart') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
-            else { cx = e.clientX; cy = e.clientY; }
+            if (e.type === 'touchstart') { cx = e.touches[0].clientX;
+                cy = e.touches[0].clientY; } else { cx = e.clientX;
+                cy = e.clientY; }
             const tx = (cx - rect.left) / rect.width * 100;
             const ty = (cy - rect.top) / rect.height * 100;
-            dragOffX = tx - token.x; dragOffY = ty - token.y;
+            dragOffX = tx - token.x;
+            dragOffY = ty - token.y;
             draggedToken = id;
             window.addEventListener('mousemove', onDrag);
             window.addEventListener('mouseup', endDrag);
@@ -636,15 +685,20 @@
             if (!token) return;
             const rect = wrapper.getBoundingClientRect();
             let cx, cy;
-            if (e.type === 'touchmove') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
-            else { cx = e.clientX; cy = e.clientY; }
+            if (e.type === 'touchmove') { cx = e.touches[0].clientX;
+                cy = e.touches[0].clientY; } else { cx = e.clientX;
+                cy = e.clientY; }
             let nx = (cx - rect.left) / rect.width * 100 - dragOffX;
             let ny = (cy - rect.top) / rect.height * 100 - dragOffY;
-            if (snapEnabled) { const s = getSnapped(nx, ny); nx = s.x; ny = s.y; }
-            else { nx = Math.max(0, Math.min(100, nx)); ny = Math.max(0, Math.min(100, ny)); }
-            token.x = nx; token.y = ny;
+            if (snapEnabled) { const s = getSnapped(nx, ny);
+                nx = s.x;
+                ny = s.y; } else { nx = Math.max(0, Math.min(100, nx));
+                ny = Math.max(0, Math.min(100, ny)); }
+            token.x = nx;
+            token.y = ny;
             const el = tokensLayer.querySelector(`[data-id="${draggedToken}"]`);
-            if (el) { el.style.left = nx + '%'; el.style.top = ny + '%'; }
+            if (el) { el.style.left = nx + '%';
+                el.style.top = ny + '%'; }
         }
 
         function endDrag() {
@@ -666,11 +720,15 @@
         mapRef.on('value', (snap) => {
             if (isLocalMapUpdate) return;
             const name = snap.val();
-            if (name && name !== currentMap) { currentMap = name; updateMapUI(name); }
+            if (name && name !== currentMap) { currentMap = name;
+                updateMapUI(name); }
         });
 
         function changeMap(name) {
-            if (!isGM) { document.getElementById('log').textContent = '⛔ Только GM может менять карту!'; return; }
+            if (!isGM) {
+                document.getElementById('log').textContent = '⛔ Только GM может менять карту!';
+                return;
+            }
             isLocalMapUpdate = true;
             currentMap = name;
             mapRef.set(name).then(() => { isLocalMapUpdate = false; });
@@ -695,7 +753,8 @@
 
         mapRef.once('value', (snap) => {
             const name = snap.val();
-            if (name) { currentMap = name; updateMapUI(name); }
+            if (name) { currentMap = name;
+                updateMapUI(name); }
             updateMapButtons();
         });
 
@@ -754,7 +813,6 @@
         });
 
         // ==================== СТАРТ ====================
-        gridSizeLabel.textContent = gridCols + 'x' + gridRows;
         updateTransform();
         if (!playerName) document.getElementById('log').textContent = '👋 Введи свой ник!';
     </script>
