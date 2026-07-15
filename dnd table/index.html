@@ -7,248 +7,113 @@
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+        /* ===== ВСЕ СТИЛИ ТЕ ЖЕ ===== */
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
-            font-family: Arial, sans-serif;
-            background: #1a1a1a;
-            color: #eee;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            padding-bottom: 20px;
-            min-height: 100vh;
+            font-family: Arial, sans-serif; background: #1a1a1a; color: #eee;
+            text-align: center; margin: 0; padding: 0; padding-bottom: 20px; min-height: 100vh;
         }
         .nickname-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 9999;
         }
-        .nickname-container.hidden {
-            display: none;
-        }
+        .nickname-container.hidden { display: none; }
         .nickname-box {
-            background: #2a2a2a;
-            padding: 30px 40px;
-            border-radius: 20px;
-            border: 2px solid #f1c40f;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
+            background: #2a2a2a; padding: 30px 40px; border-radius: 20px;
+            border: 2px solid #f1c40f; text-align: center; max-width: 400px; width: 90%;
         }
-        .nickname-box label {
-            display: block;
-            font-size: 22px;
-            margin-bottom: 15px;
-            color: #eee;
-        }
+        .nickname-box label { display: block; font-size: 22px; margin-bottom: 15px; color: #eee; }
         .nickname-box input {
-            width: 100%;
-            padding: 12px;
-            font-size: 20px;
-            border-radius: 10px;
-            border: 2px solid #555;
-            background: #1e1e1e;
-            color: #fff;
-            margin-bottom: 15px;
-            text-align: center;
-            outline: none;
+            width: 100%; padding: 12px; font-size: 20px; border-radius: 10px;
+            border: 2px solid #555; background: #1e1e1e; color: #fff;
+            margin-bottom: 15px; text-align: center; outline: none;
         }
-        .nickname-box input:focus {
-            border-color: #f1c40f;
-        }
+        .nickname-box input:focus { border-color: #f1c40f; }
         .nickname-box button {
-            background: #2980b9;
-            border: none;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-size: 18px;
-            cursor: pointer;
-            margin: 5px;
-            min-height: 48px;
+            background: #2980b9; border: none; color: white; padding: 12px 30px;
+            border-radius: 30px; font-size: 18px; cursor: pointer; margin: 5px; min-height: 48px;
         }
-        .nickname-box .skip-btn {
-            background: #555;
-        }
+        .nickname-box .skip-btn { background: #555; }
 
-        h1 {
-            font-size: 20px;
-            margin: 6px 0;
-        }
+        h1 { font-size: 20px; margin: 6px 0; }
         .top-bar {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 4px 8px;
-            padding: 4px 10px;
-            background: #222;
-            border-bottom: 1px solid #333;
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 4px 8px; padding: 4px 10px; background: #222; border-bottom: 1px solid #333;
         }
-        .top-bar .player-id {
-            color: #f1c40f;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        .top-bar .gm-indicator {
-            color: #8e44ad;
-            font-size: 13px;
-        }
+        .top-bar .player-id { color: #f1c40f; font-size: 14px; font-weight: bold; }
+        .top-bar .gm-indicator { color: #8e44ad; font-size: 13px; }
         .top-bar button {
-            background: #2c3e50;
-            border: 2px solid #444;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 13px;
-            cursor: pointer;
-            touch-action: manipulation;
-            min-height: 32px;
-            transition: 0.2s;
+            background: #2c3e50; border: 2px solid #444; color: white;
+            padding: 4px 12px; border-radius: 16px; font-size: 13px;
+            cursor: pointer; touch-action: manipulation; min-height: 32px; transition: 0.2s;
         }
-        .top-bar button:hover {
-            border-color: #f1c40f;
-        }
-        .top-bar button:active {
-            transform: scale(0.95);
-        }
-        .top-bar button.active {
-            border-color: #f1c40f;
-            background: #34495e;
-        }
-        .top-bar button.gm-btn.active {
-            background: #f1c40f;
-            color: #1e1e1e;
-            border-color: #f1c40f;
-        }
-        .top-bar button.danger {
-            background: #c0392b;
-            border-color: #c0392b;
-        }
-        .top-bar button[data-map] {
-            font-size: 12px;
-            padding: 2px 10px;
-            min-height: 28px;
-        }
-        .top-bar button[data-map].active {
-            border-color: #f1c40f;
-            background: #34495e;
-        }
-        .top-bar button[data-map].disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
+        .top-bar button:hover { border-color: #f1c40f; }
+        .top-bar button:active { transform: scale(0.95); }
+        .top-bar button.active { border-color: #f1c40f; background: #34495e; }
+        .top-bar button.gm-btn.active { background: #f1c40f; color: #1e1e1e; border-color: #f1c40f; }
+        .top-bar button.danger { background: #c0392b; border-color: #c0392b; }
+        .top-bar button[data-map] { font-size: 12px; padding: 2px 10px; min-height: 28px; }
+        .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
+        .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
-        .gm-only {
-            display: none !important;
-        }
-        .gm-only.visible {
-            display: inline-block !important;
-        }
-        .gm-only-flex {
-            display: none !important;
-        }
-        .gm-only-flex.visible {
-            display: flex !important;
-        }
+        .gm-only { display: none !important; }
+        .gm-only.visible { display: inline-block !important; }
+        .gm-only-flex { display: none !important; }
+        .gm-only-flex.visible { display: flex !important; }
 
         .map-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            aspect-ratio: 16 / 10;
-            background: #1a1a1a;
-            overflow: hidden;
-            touch-action: none;
-            cursor: grab;
-            border: 2px solid #333;
-            border-radius: 4px;
+            position: relative; width: 100%; max-width: 800px; margin: 0 auto;
+            aspect-ratio: 16 / 10; background: #1a1a1a; overflow: hidden;
+            touch-action: none; cursor: grab; border: 2px solid #333; border-radius: 4px;
         }
-        .map-wrapper:active {
-            cursor: grabbing;
-        }
+        .map-wrapper:active { cursor: grabbing; }
         .map-viewport {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             transform-origin: center center;
-            will-change: transform;
-            touch-action: none;
+            will-change: transform; touch-action: none;
         }
         .map-content {
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; height: 100%;
         }
         .map-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: block;
-            background: #1a1a1a;
-            pointer-events: none;
+            width: 100%; height: 100%; object-fit: contain; display: block;
+            background: #1a1a1a; pointer-events: none;
         }
 
         .grid-container {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 5;
             overflow: hidden;
         }
         .grid-overlay {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             display: grid;
             pointer-events: none;
         }
         .grid-overlay .cell {
             border: 1px solid rgba(255, 255, 255, 0.15);
             background: rgba(255, 255, 255, 0.02);
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
         }
-        .grid-overlay.hidden {
-            display: none;
-        }
+        .grid-overlay.hidden { display: none; }
 
         .tokens-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             touch-action: none;
             z-index: 10;
             pointer-events: none;
         }
         .token {
             position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.6);
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.6);
             border-radius: 50%;
             border: 2px solid white;
             cursor: grab;
@@ -258,357 +123,109 @@
             pointer-events: all;
             will-change: transform, width, height, font-size;
         }
-        .token:active {
-            cursor: grabbing;
-            filter: brightness(1.3);
-            z-index: 20;
-        }
-        .token.snap {
-            transition: left 0.1s ease, top 0.1s ease;
-        }
+        .token:active { cursor: grabbing; filter: brightness(1.3); z-index: 20; }
+        .token.snap { transition: left 0.1s ease, top 0.1s ease; }
 
         .zoom-controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 4px 8px;
-            padding: 6px 10px;
-            background: #222;
-            border-bottom: 1px solid #333;
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 4px 8px; padding: 6px 10px; background: #222; border-bottom: 1px solid #333;
         }
         .zoom-controls button {
-            background: #2c3e50;
-            border: 2px solid #444;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 14px;
-            cursor: pointer;
-            touch-action: manipulation;
-            min-height: 32px;
+            background: #2c3e50; border: 2px solid #444; color: white;
+            padding: 4px 12px; border-radius: 16px; font-size: 14px;
+            cursor: pointer; touch-action: manipulation; min-height: 32px;
         }
-        .zoom-controls .zoom-label {
-            color: #aaa;
-            font-size: 13px;
-            min-width: 40px;
-        }
+        .zoom-controls .zoom-label { color: #aaa; font-size: 13px; min-width: 40px; }
 
         .gm-controls {
-            display: none;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 4px 8px;
-            padding: 6px 10px;
-            background: #222;
-            border-bottom: 1px solid #333;
+            display: none; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 4px 8px; padding: 6px 10px; background: #222; border-bottom: 1px solid #333;
         }
-        .gm-controls.visible {
-            display: flex;
-        }
+        .gm-controls.visible { display: flex; }
         .gm-controls button {
-            background: #2c3e50;
-            border: 2px solid #444;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 14px;
-            cursor: pointer;
-            touch-action: manipulation;
-            min-height: 32px;
+            background: #2c3e50; border: 2px solid #444; color: white;
+            padding: 4px 12px; border-radius: 16px; font-size: 14px;
+            cursor: pointer; touch-action: manipulation; min-height: 32px;
         }
         .gm-controls input[type="number"] {
-            width: 50px;
-            background: #1a1a1a;
-            border: 2px solid #444;
-            color: #fff;
-            border-radius: 8px;
-            padding: 4px 6px;
-            text-align: center;
-            font-size: 14px;
+            width: 50px; background: #1a1a1a; border: 2px solid #444; color: #fff;
+            border-radius: 8px; padding: 4px 6px; text-align: center; font-size: 14px;
         }
-        .gm-controls input[type="number"]:focus {
-            border-color: #f1c40f;
-            outline: none;
-        }
+        .gm-controls input[type="number"]:focus { border-color: #f1c40f; outline: none; }
         .gm-controls input[type="range"] {
-            width: 70px;
-            accent-color: #f1c40f;
-            cursor: pointer;
-            touch-action: manipulation;
+            width: 70px; accent-color: #f1c40f; cursor: pointer; touch-action: manipulation;
         }
-        .gm-controls .grid-label {
-            color: #888;
-            font-size: 12px;
-        }
-        .gm-controls .size-label {
-            color: #aaa;
-            font-size: 12px;
-            min-width: 35px;
-        }
+        .gm-controls .grid-label { color: #888; font-size: 12px; }
+        .gm-controls .size-label { color: #aaa; font-size: 12px; min-width: 35px; }
 
         .dice-controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 4px 8px;
-            padding: 6px 10px;
-            background: #222;
-            border-bottom: 1px solid #333;
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 4px 8px; padding: 6px 10px; background: #222; border-bottom: 1px solid #333;
         }
         .dice-controls button {
-            background: #34495e;
-            border: none;
-            color: white;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 16px;
-            min-height: 38px;
-            min-width: 38px;
-            cursor: pointer;
-            touch-action: manipulation;
-            box-shadow: 0 2px 0 #1f2c38;
+            background: #34495e; border: none; color: white; padding: 6px 14px;
+            border-radius: 20px; font-size: 16px; min-height: 38px; min-width: 38px;
+            cursor: pointer; touch-action: manipulation; box-shadow: 0 2px 0 #1f2c38;
         }
-        .dice-controls button:active {
-            transform: translateY(2px);
-            box-shadow: none;
-        }
-        .dice-controls button.d20 {
-            background: #2980b9;
-            box-shadow: 0 2px 0 #1a5276;
-        }
+        .dice-controls button:active { transform: translateY(2px); box-shadow: none; }
+        .dice-controls button.d20 { background: #2980b9; box-shadow: 0 2px 0 #1a5276; }
         .dice-controls .dice-area {
-            font-size: 32px;
-            background: #2a2a2a;
-            padding: 4px 16px;
-            border-radius: 16px;
-            min-width: 60px;
-            display: inline-block;
+            font-size: 32px; background: #2a2a2a; padding: 4px 16px;
+            border-radius: 16px; min-width: 60px; display: inline-block;
         }
-        .dice-controls .log {
-            font-size: 14px;
-            color: #aaa;
-            min-height: 24px;
-        }
+        .dice-controls .log { font-size: 14px; color: #aaa; min-height: 24px; }
 
         .icon-picker {
-            display: none;
-            background: #2a2a2a;
-            padding: 8px;
-            border-radius: 12px;
-            margin: 4px auto;
-            max-width: 350px;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 4px;
-            border: 2px solid #555;
+            display: none; background: #2a2a2a; padding: 8px; border-radius: 12px;
+            margin: 4px auto; max-width: 350px; flex-wrap: wrap; justify-content: center;
+            gap: 4px; border: 2px solid #555;
         }
-        .icon-picker.active {
-            display: flex;
-        }
-        .icon-picker button {
-            font-size: 28px;
-            background: #444;
-            border: 2px solid transparent;
-            border-radius: 8px;
-            padding: 4px 10px;
-            min-height: 44px;
-            cursor: pointer;
-        }
+        .icon-picker.active { display: flex; }
+        .icon-picker button { font-size: 28px; background: #444; border: 2px solid transparent; border-radius: 8px; padding: 4px 10px; min-height: 44px; cursor: pointer; }
 
         .roll-log-container {
-            max-width: 800px;
-            margin: 10px auto;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 8px;
-            padding: 6px 12px;
-            border: 1px solid #333;
-            max-height: 150px;
-            overflow-y: auto;
-            width: 98%;
+            max-width: 800px; margin: 10px auto; background: rgba(0,0,0,0.8);
+            border-radius: 8px; padding: 6px 12px; border: 1px solid #333;
+            max-height: 150px; overflow-y: auto; width: 98%;
         }
-        .roll-log-container::-webkit-scrollbar {
-            width: 4px;
-        }
-        .roll-log-container::-webkit-scrollbar-thumb {
-            background: #444;
-            border-radius: 10px;
-        }
-        .roll-log-title {
-            font-size: 10px;
-            color: #666;
-            text-transform: uppercase;
-            margin-bottom: 2px;
-            text-align: left;
-        }
-        .roll-log-entry {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            padding: 2px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            color: #ddd;
-            text-align: left;
-        }
-        .roll-log-entry:last-child {
-            border-bottom: none;
-        }
-        .roll-log-entry .roll-player {
-            color: #f1c40f;
-            font-weight: bold;
-            font-size: 12px;
-            max-width: 70px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .roll-log-entry .roll-dice {
-            color: #888;
-            font-size: 11px;
-        }
-        .roll-log-entry .roll-value {
-            color: #fff;
-            font-weight: bold;
-            background: #2a2a2a;
-            padding: 0 8px;
-            border-radius: 4px;
-            min-width: 24px;
-            text-align: center;
-            font-size: 13px;
-        }
-        .roll-log-entry .roll-crit {
-            color: #f1c40f;
-            animation: pulseGold 0.5s ease;
-        }
-        .roll-log-entry .roll-fail {
-            color: #e74c3c;
-            animation: pulseRed 0.5s ease;
-        }
-        .roll-log-empty {
-            color: #555;
-            font-style: italic;
-            font-size: 12px;
-            padding: 4px 0;
-            text-align: center;
-        }
+        .roll-log-container::-webkit-scrollbar { width: 4px; }
+        .roll-log-container::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        .roll-log-title { font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 2px; text-align: left; }
+        .roll-log-entry { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.03); color: #ddd; text-align: left; }
+        .roll-log-entry:last-child { border-bottom: none; }
+        .roll-log-entry .roll-player { color: #f1c40f; font-weight: bold; font-size: 12px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .roll-log-entry .roll-dice { color: #888; font-size: 11px; }
+        .roll-log-entry .roll-value { color: #fff; font-weight: bold; background: #2a2a2a; padding: 0 8px; border-radius: 4px; min-width: 24px; text-align: center; font-size: 13px; }
+        .roll-log-entry .roll-crit { color: #f1c40f; animation: pulseGold 0.5s ease; }
+        .roll-log-entry .roll-fail { color: #e74c3c; animation: pulseRed 0.5s ease; }
+        .roll-log-empty { color: #555; font-style: italic; font-size: 12px; padding: 4px 0; text-align: center; }
 
-        @keyframes pulseGold {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.3);
-                color: #ffd700;
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-        @keyframes pulseRed {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.3);
-                color: #ff0000;
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
+        @keyframes pulseGold { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: #ffd700; } 100% { transform: scale(1); } }
+        @keyframes pulseRed { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: #ff0000; } 100% { transform: scale(1); } }
 
         .roll-toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
-            color: #fff;
-            padding: 6px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            border: 1px solid #f1c40f;
-            z-index: 999;
-            animation: slideUp 0.3s ease, fadeOut 3s ease 2.5s forwards;
-            pointer-events: none;
-            max-width: 90%;
-            white-space: nowrap;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: #fff; padding: 6px 16px;
+            border-radius: 8px; font-size: 14px; border: 1px solid #f1c40f;
+            z-index: 999; animation: slideUp 0.3s ease, fadeOut 3s ease 2.5s forwards;
+            pointer-events: none; max-width: 90%; white-space: nowrap;
         }
-        @keyframes slideUp {
-            0% {
-                transform: translateX(-50%) translateY(20px);
-                opacity: 0;
-            }
-            100% {
-                transform: translateX(-50%) translateY(0);
-                opacity: 1;
-            }
-        }
-        @keyframes fadeOut {
-            0% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-10px);
-            }
-        }
+        @keyframes slideUp { 0% { transform: translateX(-50%) translateY(20px); opacity: 0; } 100% { transform: translateX(-50%) translateY(0); opacity: 1; } }
+        @keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
 
         @media (max-width: 600px) {
-            h1 {
-                font-size: 16px;
-            }
-            .top-bar button {
-                font-size: 11px;
-                padding: 2px 8px;
-                min-height: 26px;
-            }
-            .top-bar button[data-map] {
-                font-size: 10px;
-                padding: 2px 6px;
-                min-height: 24px;
-            }
-            .zoom-controls button {
-                font-size: 12px;
-                padding: 2px 8px;
-                min-height: 28px;
-            }
-            .gm-controls button {
-                font-size: 12px;
-                padding: 2px 8px;
-                min-height: 28px;
-            }
-            .gm-controls input[type="number"] {
-                width: 40px;
-                font-size: 12px;
-            }
-            .gm-controls input[type="range"] {
-                width: 50px;
-            }
-            .dice-controls button {
-                font-size: 14px;
-                padding: 4px 10px;
-                min-height: 32px;
-                min-width: 32px;
-            }
-            .dice-controls .dice-area {
-                font-size: 26px;
-                padding: 2px 12px;
-                min-width: 44px;
-            }
-            .roll-log-container {
-                max-height: 100px;
-            }
-            .roll-log-entry {
-                font-size: 11px;
-            }
-            .roll-log-entry .roll-player {
-                max-width: 50px;
-                font-size: 10px;
-            }
+            h1 { font-size: 16px; }
+            .top-bar button { font-size: 11px; padding: 2px 8px; min-height: 26px; }
+            .top-bar button[data-map] { font-size: 10px; padding: 2px 6px; min-height: 24px; }
+            .zoom-controls button { font-size: 12px; padding: 2px 8px; min-height: 28px; }
+            .gm-controls button { font-size: 12px; padding: 2px 8px; min-height: 28px; }
+            .gm-controls input[type="number"] { width: 40px; font-size: 12px; }
+            .gm-controls input[type="range"] { width: 50px; }
+            .dice-controls button { font-size: 14px; padding: 4px 10px; min-height: 32px; min-width: 32px; }
+            .dice-controls .dice-area { font-size: 26px; padding: 2px 12px; min-width: 44px; }
+            .roll-log-container { max-height: 100px; }
+            .roll-log-entry { font-size: 11px; }
+            .roll-log-entry .roll-player { max-width: 50px; font-size: 10px; }
         }
     </style>
 </head>
@@ -740,29 +357,25 @@
             const name = input.value.trim();
             if (name.length === 0) { alert('❌ Введи хоть что-то!'); return; }
             if (name.length > 20) { alert('❌ Слишком длинный ник!'); return; }
-            playerName = name;
-            displayName = name;
+            playerName = name; displayName = name;
             localStorage.setItem('dnd_player_name', name);
             document.getElementById('nicknameContainer').classList.add('hidden');
             document.getElementById('playerId').textContent = '👤 ' + displayName;
             document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
         }
-
         function skipNickname() {
             displayName = randomId;
             document.getElementById('nicknameContainer').classList.add('hidden');
             document.getElementById('playerId').textContent = '👤 ' + displayName;
             document.getElementById('log').textContent = '👋 Играем без ника';
         }
-
         function showChangeName() {
             if (!isGM) return;
             const newName = prompt('✏️ Введи новый ник:', displayName);
             if (!newName) return;
             const trimmed = newName.trim();
             if (trimmed.length === 0 || trimmed.length > 20) { alert('❌ От 1 до 20 символов!'); return; }
-            playerName = trimmed;
-            displayName = trimmed;
+            playerName = trimmed; displayName = trimmed;
             localStorage.setItem('dnd_player_name', trimmed);
             document.getElementById('playerId').textContent = '👤 ' + displayName;
             document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
@@ -809,11 +422,8 @@
         }
 
         // ==================== КАРТА: ZOOM / PAN ====================
-        let scale = 1,
-            panX = 0,
-            panY = 0;
-        let isDraggingMap = false,
-            startX, startY, startPanX, startPanY, lastTouchDist = 0;
+        let scale = 1, panX = 0, panY = 0;
+        let isDraggingMap = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
         const wrapper = document.getElementById('mapWrapper');
         const viewport = document.getElementById('mapViewport');
         const mapImage = document.getElementById('mapImage');
@@ -829,24 +439,15 @@
             updateTokenSizes();
         }
 
-        function zoomIn() { scale = Math.min(5, scale + 0.15);
-            updateTransform(); }
-
-        function zoomOut() { scale = Math.max(0.2, scale - 0.15);
-            updateTransform(); }
-
-        function resetZoom() { scale = 1;
-            panX = 0;
-            panY = 0;
-            updateTransform(); }
+        function zoomIn() { scale = Math.min(5, scale + 0.15); updateTransform(); }
+        function zoomOut() { scale = Math.max(0.2, scale - 0.15); updateTransform(); }
+        function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
         wrapper.addEventListener('mousedown', (e) => {
             if (e.target.closest('.token')) return;
             isDraggingMap = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            startPanX = panX;
-            startPanY = panY;
+            startX = e.clientX; startY = e.clientY;
+            startPanX = panX; startPanY = panY;
             wrapper.style.cursor = 'grabbing';
         });
         window.addEventListener('mousemove', (e) => {
@@ -855,17 +456,14 @@
             panY = startPanY + (e.clientY - startY);
             updateTransform();
         });
-        window.addEventListener('mouseup', () => { isDraggingMap = false;
-            wrapper.style.cursor = 'grab'; });
+        window.addEventListener('mouseup', () => { isDraggingMap = false; wrapper.style.cursor = 'grab'; });
 
         wrapper.addEventListener('touchstart', (e) => {
             if (e.target.closest('.token')) return;
             if (e.touches.length === 1) {
                 isDraggingMap = true;
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                startPanX = panX;
-                startPanY = panY;
+                startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+                startPanX = panX; startPanY = panY;
             }
         }, { passive: true });
 
@@ -876,8 +474,7 @@
                 updateTransform();
             }
             if (e.touches.length === 2) {
-                const t1 = e.touches[0],
-                    t2 = e.touches[1];
+                const t1 = e.touches[0], t2 = e.touches[1];
                 const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
                 if (lastTouchDist > 0) {
                     scale = Math.min(5, Math.max(0.2, scale + (dist - lastTouchDist) * 0.005));
@@ -888,15 +485,13 @@
             }
         }, { passive: false });
 
-        wrapper.addEventListener('touchend', () => { isDraggingMap = false;
-            lastTouchDist = 0; }, { passive: true });
+        wrapper.addEventListener('touchend', () => { isDraggingMap = false; lastTouchDist = 0; }, { passive: true });
         window.addEventListener('resize', updateTransform);
 
         // ==================== СЕТКА ====================
         let snapEnabled = true;
         let gridVisible = true;
-        let gridCols = 10,
-            gridRows = 6;
+        let gridCols = 10, gridRows = 6;
         const gridOverlay = document.getElementById('gridOverlay');
         const gridContainer = document.getElementById('gridContainer');
         const gridColsInput = document.getElementById('gridColsInput');
@@ -926,8 +521,7 @@
                 const nc = data.cols || 10;
                 const nr = data.rows || 6;
                 if (nc !== gridCols || nr !== gridRows) {
-                    gridCols = nc;
-                    gridRows = nr;
+                    gridCols = nc; gridRows = nr;
                     gridColsInput.value = gridCols;
                     gridRowsInput.value = gridRows;
                     buildGrid();
@@ -960,8 +554,7 @@
             if (isNaN(nr) || nr < 2) nr = 2;
             if (nc > 100) nc = 100;
             if (nr > 60) nr = 60;
-            gridCols = nc;
-            gridRows = nr;
+            gridCols = nc; gridRows = nr;
             gridColsInput.value = gridCols;
             gridRowsInput.value = gridRows;
             buildGrid();
@@ -1010,18 +603,15 @@
         let tokens = {};
         let nextId = 1;
         let draggedToken = null;
-        let dragOffsetX = 0,
-            dragOffsetY = 0;
+        let dragOffsetX = 0, dragOffsetY = 0;
         let isLocalUpdate = false;
         let isFirstLoad = true;
         const tokensRef = db.ref('tokens');
 
         function getSnapped(x, y) {
             if (!snapEnabled) return { x, y };
-            const cw = 100 / gridCols,
-                ch = 100 / gridRows;
-            const col = Math.round(x / cw),
-                row = Math.round(y / ch);
+            const cw = 100 / gridCols, ch = 100 / gridRows;
+            const col = Math.round(x / cw), row = Math.round(y / ch);
             return {
                 x: Math.max(0, Math.min(100, col * cw + cw / 2)),
                 y: Math.max(0, Math.min(100, row * ch + ch / 2))
@@ -1138,12 +728,11 @@
             if (!isGM) return;
             document.getElementById('iconPicker').classList.toggle('active');
         }
-
         function hideIconPicker() {
             document.getElementById('iconPicker').classList.remove('active');
         }
 
-        // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК (ФИНАЛЬНАЯ ВЕРСИЯ) =====
+        // ===== ПЕРЕТАСКИВАНИЕ С УЧЕТОМ МАСШТАБА (ФИНАЛЬНАЯ ВЕРСИЯ) =====
         function startDrag(e, id) {
             e.preventDefault();
             const token = tokens[id];
@@ -1159,12 +748,16 @@
                 cy = e.clientY;
             }
 
-            // Координаты пальца в процентах
+            // Координаты пальца в процентах внутри wrapper
             const px = (cx - rect.left) / rect.width * 100;
             const py = (cy - rect.top) / rect.height * 100;
 
-            dragOffsetX = px - token.x;
-            dragOffsetY = py - token.y;
+            // Применяем обратный масштаб, чтобы скомпенсировать зум
+            const scaledPx = px / scale;
+            const scaledPy = py / scale;
+
+            dragOffsetX = scaledPx - token.x;
+            dragOffsetY = scaledPy - token.y;
 
             draggedToken = id;
             window.addEventListener('mousemove', onDrag);
@@ -1189,8 +782,16 @@
                 cy = e.clientY;
             }
 
-            let nx = (cx - rect.left) / rect.width * 100 - dragOffsetX;
-            let ny = (cy - rect.top) / rect.height * 100 - dragOffsetY;
+            // Текущая позиция пальца в процентах внутри wrapper
+            let px = (cx - rect.left) / rect.width * 100;
+            let py = (cy - rect.top) / rect.height * 100;
+
+            // Применяем обратный масштаб
+            px = px / scale;
+            py = py / scale;
+
+            let nx = px - dragOffsetX;
+            let ny = py - dragOffsetY;
 
             nx = Math.max(0, Math.min(100, nx));
             ny = Math.max(0, Math.min(100, ny));
@@ -1225,8 +826,7 @@
         }
 
         // ==================== КАРТЫ ====================
-        let currentMap = 'forest',
-            isLocalMapUpdate = false;
+        let currentMap = 'forest', isLocalMapUpdate = false;
         const mapRef = db.ref('currentMap');
         mapRef.on('value', (snap) => {
             if (isLocalMapUpdate) return;
