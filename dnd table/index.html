@@ -55,7 +55,6 @@
         .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
         .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
-        /* ===== КЛЯНУСЬ, ЭТО ИСПРАВЛЕНО (ДОБАВЛЕН !IMPORTANT) ===== */
         .gm-only { display: none !important; }
         .gm-only.visible { display: inline-block !important; }
         .gm-only-flex { display: none !important; }
@@ -532,7 +531,6 @@
         const tokenSizeSlider = document.getElementById('tokenSizeSlider');
         const tokenSizeLabel = document.getElementById('tokenSizeLabel');
 
-        // ===== КЛЯНУСЬ, ПОЛЗУНОК РАБОТАЕТ (ДОБАВЛЕН updateTokenSizes) =====
         tokenSizeSlider.addEventListener('input', function() {
             if (!isGM) return;
             tokenSizePercent = parseInt(this.value);
@@ -703,7 +701,7 @@
             document.getElementById('iconPicker').classList.remove('active');
         }
 
-        // ===== КЛЯНУСЬ, ФИГУРКИ НЕ УЛЕТАЮТ (ПЕРЕПИСАНА ЛОГИКА ПЕРЕТАСКИВАНИЯ) =====
+        // ===== ИСПРАВЛЕННОЕ ПЕРЕТАСКИВАНИЕ ФИГУРОК (НЕ УЛЕТАЮТ) =====
         function startDrag(e, id) {
             e.preventDefault();
             const token = tokens[id];
@@ -719,11 +717,13 @@
                 cy = e.clientY;
             }
 
-            // Вычисляем смещение в пикселях
-            const tokenPixelX = (token.x / 100) * rect.width;
-            const tokenPixelY = (token.y / 100) * rect.height;
-            dragOffsetX = cx - (rect.left + tokenPixelX);
-            dragOffsetY = cy - (rect.top + tokenPixelY);
+            // Переводим координаты пальца в проценты относительно wrapper
+            const px = (cx - rect.left) / rect.width * 100;
+            const py = (cy - rect.top) / rect.height * 100;
+
+            // Вычисляем смещение пальца относительно центра фигурки в процентах
+            dragOffsetX = px - token.x;
+            dragOffsetY = py - token.y;
 
             draggedToken = id;
             window.addEventListener('mousemove', onDrag);
@@ -749,8 +749,8 @@
             }
 
             // Новая позиция в процентах
-            let nx = ((cx - dragOffsetX) - rect.left) / rect.width * 100;
-            let ny = ((cy - dragOffsetY) - rect.top) / rect.height * 100;
+            let nx = (cx - rect.left) / rect.width * 100 - dragOffsetX;
+            let ny = (cy - rect.top) / rect.height * 100 - dragOffsetY;
 
             nx = Math.max(0, Math.min(100, nx));
             ny = Math.max(0, Math.min(100, ny));
