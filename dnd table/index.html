@@ -22,16 +22,9 @@
             text-align: center;
             margin: 0;
             padding: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            padding-bottom: 20px;
+            min-height: 100vh;
             touch-action: pan-y;
-        }
-        h1 {
-            font-size: 20px;
-            margin: 6px 0;
-            flex-shrink: 0;
         }
 
         /* ===== ВВОД НИКА ===== */
@@ -105,14 +98,20 @@
             background: #777;
         }
 
+        /* ===== ЗАГОЛОВОК ===== */
+        h1 {
+            font-size: 20px;
+            margin: 6px 0;
+            flex-shrink: 0;
+        }
+
         /* ===== ВЕРХНЯЯ ПАНЕЛЬ ===== */
         .top-bar {
-            flex-shrink: 0;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 6px 12px;
+            gap: 4px 8px;
             padding: 4px 10px;
             background: #222;
             border-bottom: 1px solid #333;
@@ -126,8 +125,6 @@
             color: #8e44ad;
             font-size: 13px;
         }
-
-        /* ===== КНОПКИ ВВЕРХУ ===== */
         .top-bar button {
             background: #2c3e50;
             border: 2px solid #444;
@@ -155,17 +152,38 @@
             color: #1e1e1e;
             border-color: #f1c40f;
         }
+        .top-bar button.danger {
+            background: #c0392b;
+            border-color: #c0392b;
+        }
+        .top-bar button[data-map] {
+            font-size: 12px;
+            padding: 2px 10px;
+            min-height: 28px;
+        }
+        .top-bar button[data-map].active {
+            border-color: #f1c40f;
+            background: #34495e;
+        }
+        .top-bar button[data-map].disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
 
         /* ===== КАРТА ===== */
         .map-wrapper {
             position: relative;
-            flex: 1 1 auto;
             width: 100%;
-            min-height: 0;
-            overflow: hidden;
+            max-width: 800px;
+            margin: 0 auto;
+            aspect-ratio: 16 / 10;
             background: #1a1a1a;
+            overflow: hidden;
             touch-action: none;
             cursor: grab;
+            border: 2px solid #333;
+            border-radius: 4px;
         }
         .map-wrapper:active {
             cursor: grabbing;
@@ -180,9 +198,6 @@
             transform-origin: 0 0;
             touch-action: none;
             will-change: transform;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         .map-image {
@@ -206,8 +221,9 @@
             z-index: 5;
         }
         .grid-overlay .cell {
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             background: rgba(255, 255, 255, 0.03);
+            aspect-ratio: 1 / 1;
         }
         .grid-overlay.hidden {
             display: none;
@@ -257,19 +273,64 @@
             transition: left 0.1s ease, top 0.1s ease;
         }
 
-        /* ===== НИЖНЯЯ ПАНЕЛЬ ===== */
-        .bottom-bar {
-            flex-shrink: 0;
+        /* ===== КОНТРОЛЛЫ КАРТЫ ===== */
+        .map-controls {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
             gap: 4px 8px;
-            padding: 4px 10px;
+            padding: 6px 10px;
             background: #222;
-            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
         }
-        .bottom-bar button {
+        .map-controls button {
+            background: #2c3e50;
+            border: 2px solid #444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+            touch-action: manipulation;
+            min-height: 32px;
+            transition: 0.2s;
+        }
+        .map-controls button:hover {
+            border-color: #f1c40f;
+        }
+        .map-controls button:active {
+            transform: scale(0.95);
+        }
+        .map-controls .zoom-label {
+            color: #aaa;
+            font-size: 13px;
+            min-width: 40px;
+        }
+        .map-controls input[type="range"] {
+            width: 80px;
+            accent-color: #f1c40f;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .map-controls .grid-label {
+            color: #888;
+            font-size: 12px;
+            min-width: 40px;
+        }
+
+        /* ===== КНОПКИ КУБИКОВ ===== */
+        .dice-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 4px 8px;
+            padding: 6px 10px;
+            background: #222;
+            border-bottom: 1px solid #333;
+        }
+        .dice-controls button {
             background: #34495e;
             border: none;
             color: white;
@@ -283,19 +344,15 @@
             box-shadow: 0 2px 0 #1f2c38;
             transition: 0.1s;
         }
-        .bottom-bar button:active {
+        .dice-controls button:active {
             transform: translateY(2px);
             box-shadow: none;
         }
-        .bottom-bar button.danger {
-            background: #c0392b;
-            box-shadow: 0 2px 0 #78281f;
-        }
-        .bottom-bar button.d20 {
+        .dice-controls button.d20 {
             background: #2980b9;
             box-shadow: 0 2px 0 #1a5276;
         }
-        .bottom-bar .dice-area {
+        .dice-controls .dice-area {
             font-size: 32px;
             background: #2a2a2a;
             padding: 4px 16px;
@@ -303,27 +360,13 @@
             min-width: 60px;
             display: inline-block;
         }
-        .bottom-bar .log {
+        .dice-controls .log {
             font-size: 14px;
             color: #aaa;
             min-height: 24px;
         }
-        .bottom-bar .grid-controls {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .bottom-bar .grid-controls input[type="range"] {
-            width: 80px;
-            accent-color: #f1c40f;
-            cursor: pointer;
-        }
-        .bottom-bar .grid-controls label {
-            font-size: 12px;
-            color: #888;
-        }
 
-        /* ===== ИКОНКИ ===== */
+        /* ===== ВЫБОР ИКОНОК ===== */
         .icon-picker {
             display: none;
             background: #2a2a2a;
@@ -349,18 +392,21 @@
             cursor: pointer;
         }
 
-        /* ===== ЛОГ БРОСКОВ (внизу) ===== */
+        /* ===== ЛОГ БРОСКОВ ===== */
         .roll-log-container {
-            max-height: 120px;
+            max-width: 800px;
+            margin: 10px auto 0 auto;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            padding: 6px 12px;
+            border: 1px solid #333;
+            max-height: 150px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 4px 12px;
-            border-top: 1px solid #333;
-            flex-shrink: 0;
+            width: 98%;
         }
         .roll-log-container::-webkit-scrollbar {
-            width: 3px;
+            width: 4px;
         }
         .roll-log-container::-webkit-scrollbar-thumb {
             background: #444;
@@ -372,6 +418,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 2px;
+            text-align: left;
         }
         .roll-log-entry {
             display: flex;
@@ -381,6 +428,7 @@
             padding: 2px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             color: #ddd;
+            text-align: left;
         }
         .roll-log-entry:last-child {
             border-bottom: none;
@@ -421,6 +469,7 @@
             font-style: italic;
             font-size: 12px;
             padding: 4px 0;
+            text-align: center;
         }
 
         @keyframes pulseGold {
@@ -437,7 +486,7 @@
         /* ===== ТОСТ ===== */
         .roll-toast {
             position: fixed;
-            bottom: 80px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.85);
@@ -465,12 +514,21 @@
         @media (max-width: 600px) {
             h1 { font-size: 16px; margin: 4px 0; }
             .top-bar button { font-size: 11px; padding: 2px 8px; min-height: 26px; }
-            .bottom-bar button { font-size: 14px; padding: 4px 10px; min-height: 32px; min-width: 32px; }
-            .bottom-bar .dice-area { font-size: 26px; padding: 2px 12px; min-width: 44px; }
-            .bottom-bar .grid-controls input[type="range"] { width: 60px; }
+            .top-bar button[data-map] { font-size: 10px; padding: 2px 6px; min-height: 24px; }
+            .map-controls button { font-size: 12px; padding: 2px 8px; min-height: 28px; }
+            .map-controls input[type="range"] { width: 60px; }
+            .dice-controls button { font-size: 14px; padding: 4px 10px; min-height: 32px; min-width: 32px; }
+            .dice-controls .dice-area { font-size: 26px; padding: 2px 12px; min-width: 44px; }
             .token { font-size: 18px; min-width: 24px; min-height: 24px; max-width: 40px; max-height: 40px; }
-            .roll-log-container { max-height: 80px; }
+            .roll-log-container { max-height: 100px; }
             .roll-log-entry { font-size: 11px; }
+            .roll-log-entry .roll-player { max-width: 50px; font-size: 10px; }
+        }
+
+        @media (max-width: 400px) {
+            .top-bar button[data-map] { font-size: 9px; padding: 1px 4px; min-height: 20px; }
+            .map-controls input[type="range"] { width: 40px; }
+            .map-controls .grid-label { font-size: 10px; min-width: 30px; }
         }
     </style>
 </head>
@@ -500,6 +558,15 @@
         <button onclick="toggleSnap()" class="active" id="snapToggleBtn">🎯</button>
     </div>
 
+    <!-- ===== ВЫБОР КАРТЫ ===== -->
+    <div class="top-bar" style="border-bottom: none; background: #1a1a1a; gap: 4px; padding: 4px 10px;">
+        <button onclick="changeMap('forest')" data-map="forest" class="active">🌲 Лес</button>
+        <button onclick="changeMap('dungeon')" data-map="dungeon">🏚️ Подземелье</button>
+        <button onclick="changeMap('castle')" data-map="castle">🏰 Замок</button>
+        <button onclick="changeMap('tavern')" data-map="tavern">🍺 Таверна</button>
+        <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
+    </div>
+
     <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="map-inner" id="mapInner">
@@ -509,13 +576,28 @@
         </div>
     </div>
 
-    <!-- ===== ВЫБОР КАРТЫ (всплывающий) ===== -->
-    <div class="top-bar" style="border-bottom: none; background: #1a1a1a; gap: 4px;">
-        <button onclick="changeMap('forest')" data-map="forest" class="active" style="font-size:12px;">🌲 Лес</button>
-        <button onclick="changeMap('dungeon')" data-map="dungeon" style="font-size:12px;">🏚️ Подземелье</button>
-        <button onclick="changeMap('castle')" data-map="castle" style="font-size:12px;">🏰 Замок</button>
-        <button onclick="changeMap('tavern')" data-map="tavern" style="font-size:12px;">🍺 Таверна</button>
-        <button onclick="changeMap('cave')" data-map="cave" style="font-size:12px;">🕳️ Пещера</button>
+    <!-- ===== УПРАВЛЕНИЕ КАРТОЙ ===== -->
+    <div class="map-controls">
+        <button onclick="zoomOut()">➖</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button onclick="zoomIn()">➕</button>
+        <button onclick="resetZoom()" style="font-size:14px;">⟲</button>
+        <span style="color:#444;">|</span>
+        <span class="grid-label" id="gridSizeLabel">📐 10x6</span>
+        <input type="range" id="gridSizeSlider" min="4" max="20" value="10" step="1">
+        <span style="color:#444; font-size:12px;">размер</span>
+    </div>
+
+    <!-- ===== КУБИКИ ===== -->
+    <div class="dice-controls">
+        <div class="dice-area" id="diceDisplay">🎲</div>
+        <button class="d20" onclick="rollDice(20)">d20</button>
+        <button onclick="rollDice(6)">d6</button>
+        <button onclick="rollDice(8)">d8</button>
+        <button onclick="rollDice(10)">d10</button>
+        <button onclick="rollDice(12)">d12</button>
+        <button onclick="rollDice(100)">d100</button>
+        <span class="log" id="log">Привет!</span>
     </div>
 
     <!-- ===== ВЫБОР ИКОНОК ===== -->
@@ -531,29 +613,6 @@
         <button onclick="addToken('🐺')">🐺</button>
         <button onclick="addToken('🧌')">🧌</button>
         <button onclick="hideIconPicker()" style="background:#c0392b;">✖</button>
-    </div>
-
-    <!-- ===== НИЖНЯЯ ПАНЕЛЬ ===== -->
-    <div class="bottom-bar">
-        <button onclick="zoomOut()">➖</button>
-        <span id="zoomLabel" style="font-size:13px; color:#aaa; min-width:40px;">100%</span>
-        <button onclick="zoomIn()">➕</button>
-        <button onclick="resetZoom()" style="font-size:14px;">⟲</button>
-        
-        <div class="grid-controls">
-            <label>📐</label>
-            <input type="range" id="gridSizeSlider" min="4" max="20" value="10" step="1">
-            <span id="gridSizeLabel" style="font-size:12px; color:#888; min-width:30px;">10</span>
-        </div>
-
-        <div class="dice-area" id="diceDisplay">🎲</div>
-        <button class="d20" onclick="rollDice(20)">d20</button>
-        <button onclick="rollDice(6)">d6</button>
-        <button onclick="rollDice(8)">d8</button>
-        <button onclick="rollDice(10)">d10</button>
-        <button onclick="rollDice(12)">d12</button>
-        <button onclick="rollDice(100)">d100</button>
-        <span class="log" id="log">Привет!</span>
     </div>
 
     <!-- ===== ЛОГ БРОСКОВ ===== -->
@@ -676,7 +735,6 @@
             mapInner.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
             zoomLabel.textContent = Math.round(scale * 100) + '%';
             
-            // Масштабируем фигурки
             document.querySelectorAll('.token').forEach(token => {
                 const baseSize = 26;
                 const newSize = Math.min(48, Math.max(20, baseSize * scale));
@@ -791,20 +849,30 @@
         }
         buildGrid();
 
-        gridSizeSlider.addEventListener('input', function() {
+        gridSizeSlider.addEventListener('change', function() {
             if (!isGM) {
                 document.getElementById('log').textContent = '⛔ Только GM может менять сетку!';
                 gridSizeSlider.value = gridCols;
                 return;
             }
-            gridCols = parseInt(this.value);
-            gridRows = Math.round(gridCols * 0.6);
-            if (gridRows < 3) gridRows = 3;
-            gridSizeLabel.textContent = gridCols + 'x' + gridRows;
+            const newCols = parseInt(this.value);
+            const newRows = Math.round(newCols * 0.6);
+            if (newRows < 3) return;
+            gridCols = newCols;
+            gridRows = newRows;
+            gridSizeLabel.textContent = '📐 ' + gridCols + 'x' + gridRows;
             buildGrid();
-            // Пересчитываем позиции фигурок под новую сетку
             recalcTokenPositions();
             document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
+        });
+
+        // Также на input для более быстрой реакции на телефоне
+        gridSizeSlider.addEventListener('input', function() {
+            if (!isGM) return;
+            const newCols = parseInt(this.value);
+            const newRows = Math.round(newCols * 0.6);
+            if (newRows < 3) return;
+            gridSizeLabel.textContent = '📐 ' + newCols + 'x' + newRows;
         });
 
         function toggleGrid() {
@@ -823,7 +891,7 @@
         }
 
         // ============================================
-        // ФИГУРКИ (мгновенная синхронизация)
+        // ФИГУРКИ (исправленная синхронизация)
         // ============================================
         const tokensLayer = document.getElementById('tokensLayer');
         let tokens = {};
@@ -854,26 +922,41 @@
             renderTokens();
         }
 
-        // Загрузка токенов через child_added (мгновенно!)
+        // ===== ЗАГРУЗКА ТОКЕНОВ =====
         const tokensRef = db.ref('tokens');
 
+        // Загружаем все токены при старте
+        tokensRef.once('value', function(snapshot) {
+            const data = snapshot.val();
+            if (data) {
+                tokens = data;
+                Object.keys(tokens).forEach(id => {
+                    const numId = parseInt(id);
+                    if (numId >= nextId) nextId = numId + 1;
+                });
+                renderTokens();
+            }
+        });
+
+        // Слушаем добавление новых токенов
         tokensRef.on('child_added', function(snapshot) {
             if (isLocalUpdate) return;
-            const data = snapshot.val();
             const id = parseInt(snapshot.key);
-            if (id > nextId) nextId = id + 1;
+            const data = snapshot.val();
             tokens[id] = data;
             renderToken(id);
         });
 
+        // Слушаем изменение токенов
         tokensRef.on('child_changed', function(snapshot) {
             if (isLocalUpdate) return;
-            const data = snapshot.val();
             const id = parseInt(snapshot.key);
+            const data = snapshot.val();
             tokens[id] = data;
             renderToken(id);
         });
 
+        // Слушаем удаление токенов
         tokensRef.on('child_removed', function(snapshot) {
             if (isLocalUpdate) return;
             const id = parseInt(snapshot.key);
@@ -909,7 +992,6 @@
             el.style.left = token.x + '%';
             el.style.top = token.y + '%';
             
-            // Масштабирование
             const baseSize = 26;
             const newSize = Math.min(48, Math.max(20, baseSize * scale));
             el.style.fontSize = newSize + 'px';
@@ -920,7 +1002,14 @@
 
         function renderTokens() {
             tokensLayer.innerHTML = '';
-            Object.values(tokens).forEach(t => renderToken(t.id));
+            Object.keys(tokens).forEach(id => renderToken(parseInt(id)));
+        }
+
+        function saveTokens() {
+            isLocalUpdate = true;
+            tokensRef.set(tokens).then(() => {
+                isLocalUpdate = false;
+            });
         }
 
         function deleteToken(id) {
@@ -1096,8 +1185,11 @@
 
         function updateMapButtons() {
             document.querySelectorAll('.top-bar button[data-map]').forEach(btn => {
-                btn.style.opacity = isGM ? '1' : '0.5';
-                btn.style.cursor = isGM ? 'pointer' : 'not-allowed';
+                if (isGM) {
+                    btn.classList.remove('disabled');
+                } else {
+                    btn.classList.add('disabled');
+                }
             });
         }
 
@@ -1113,7 +1205,7 @@
         // ============================================
         // ЛОГ БРОСКОВ
         // ============================================
-        const MAX_LOG_ENTRIES = 10;
+        const MAX_LOG_ENTRIES = 15;
 
         function addLogEntry(player, sides, result) {
             const container = document.getElementById('rollLogEntries');
@@ -1195,7 +1287,7 @@
         // ============================================
         // ЗАПУСК
         // ============================================
-        gridSizeLabel.textContent = gridCols + 'x' + gridRows;
+        gridSizeLabel.textContent = '📐 ' + gridCols + 'x' + gridRows;
         updateTransform();
 
         if (!playerName) {
