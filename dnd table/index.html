@@ -17,17 +17,21 @@
         }
         body {
             font-family: Arial, sans-serif;
-            background: #1e1e1e;
+            background: #1a1a1a;
             color: #eee;
             text-align: center;
             margin: 0;
-            padding: 10px;
-            padding-bottom: 30px;
-            touch-action: pan-y; /* разрешаем вертикальный скролл */
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            touch-action: pan-y;
         }
         h1 {
-            font-size: 22px;
-            margin: 10px 0;
+            font-size: 20px;
+            margin: 6px 0;
+            flex-shrink: 0;
         }
 
         /* ===== ВВОД НИКА ===== */
@@ -37,12 +41,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            backdrop-filter: blur(5px);
         }
         .nickname-container.hidden {
             display: none;
@@ -102,18 +105,66 @@
             background: #777;
         }
 
+        /* ===== ВЕРХНЯЯ ПАНЕЛЬ ===== */
+        .top-bar {
+            flex-shrink: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 6px 12px;
+            padding: 4px 10px;
+            background: #222;
+            border-bottom: 1px solid #333;
+        }
+        .top-bar .player-id {
+            color: #f1c40f;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .top-bar .gm-indicator {
+            color: #8e44ad;
+            font-size: 13px;
+        }
+
+        /* ===== КНОПКИ ВВЕРХУ ===== */
+        .top-bar button {
+            background: #2c3e50;
+            border: 2px solid #444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            touch-action: manipulation;
+            min-height: 32px;
+            transition: 0.2s;
+        }
+        .top-bar button:hover {
+            border-color: #f1c40f;
+        }
+        .top-bar button:active {
+            transform: scale(0.95);
+        }
+        .top-bar button.active {
+            border-color: #f1c40f;
+            background: #34495e;
+        }
+        .top-bar button.gm-btn.active {
+            background: #f1c40f;
+            color: #1e1e1e;
+            border-color: #f1c40f;
+        }
+
         /* ===== КАРТА ===== */
         .map-wrapper {
             position: relative;
-            max-width: 600px;
-            margin: 10px auto;
-            aspect-ratio: 10 / 6;
-            border: 3px solid #555;
-            width: 95vw;
-            max-height: 70vh;
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: 0;
             overflow: hidden;
-            touch-action: none;
             background: #1a1a1a;
+            touch-action: none;
             cursor: grab;
         }
         .map-wrapper:active {
@@ -129,6 +180,9 @@
             transform-origin: 0 0;
             touch-action: none;
             will-change: transform;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .map-image {
@@ -136,11 +190,11 @@
             height: 100%;
             object-fit: contain;
             display: block;
-            pointer-events: none;
             background: #1a1a1a;
+            pointer-events: none;
         }
 
-        /* ===== СЕТКА (поверх картинки) ===== */
+        /* ===== СЕТКА ===== */
         .grid-overlay {
             position: absolute;
             top: 0;
@@ -152,7 +206,7 @@
             z-index: 5;
         }
         .grid-overlay .cell {
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             background: rgba(255, 255, 255, 0.03);
         }
         .grid-overlay.hidden {
@@ -171,11 +225,10 @@
         }
         .token {
             position: absolute;
-            font-size: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             border-radius: 50%;
             border: 2px solid white;
             cursor: grab;
@@ -188,11 +241,11 @@
             transition: filter 0.2s;
             width: 10%;
             height: 16.6%;
-            min-width: 30px;
-            min-height: 30px;
+            min-width: 28px;
+            min-height: 28px;
             max-width: 50px;
             max-height: 50px;
-            font-size: 24px;
+            font-size: 22px;
             will-change: transform, width, height, font-size;
         }
         .token:active {
@@ -204,225 +257,130 @@
             transition: left 0.1s ease, top 0.1s ease;
         }
 
-        /* ===== КНОПКИ УПРАВЛЕНИЯ КАРТОЙ ===== */
-        .map-controls {
+        /* ===== НИЖНЯЯ ПАНЕЛЬ ===== */
+        .bottom-bar {
+            flex-shrink: 0;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 8px;
-            margin: 8px 0;
+            gap: 4px 8px;
+            padding: 4px 10px;
+            background: #222;
+            border-top: 1px solid #333;
         }
-        .map-controls button {
-            background: #2c3e50;
-            border: 2px solid #555;
+        .bottom-bar button {
+            background: #34495e;
+            border: none;
             color: white;
             padding: 6px 14px;
             border-radius: 20px;
             font-size: 16px;
+            min-height: 38px;
+            min-width: 38px;
             cursor: pointer;
             touch-action: manipulation;
-            min-height: 40px;
-            min-width: 40px;
-            transition: 0.2s;
+            box-shadow: 0 2px 0 #1f2c38;
+            transition: 0.1s;
         }
-        .map-controls button:hover {
-            background: #34495e;
-            border-color: #f1c40f;
+        .bottom-bar button:active {
+            transform: translateY(2px);
+            box-shadow: none;
         }
-        .map-controls button:active {
-            transform: scale(0.95);
+        .bottom-bar button.danger {
+            background: #c0392b;
+            box-shadow: 0 2px 0 #78281f;
         }
-        .map-controls button.active {
-            border-color: #f1c40f;
-            background: #34495e;
+        .bottom-bar button.d20 {
+            background: #2980b9;
+            box-shadow: 0 2px 0 #1a5276;
         }
-        .map-controls .zoom-slider {
-            width: 100px;
+        .bottom-bar .dice-area {
+            font-size: 32px;
+            background: #2a2a2a;
+            padding: 4px 16px;
+            border-radius: 16px;
+            min-width: 60px;
+            display: inline-block;
+        }
+        .bottom-bar .log {
+            font-size: 14px;
+            color: #aaa;
+            min-height: 24px;
+        }
+        .bottom-bar .grid-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .bottom-bar .grid-controls input[type="range"] {
+            width: 80px;
             accent-color: #f1c40f;
             cursor: pointer;
         }
-        .map-controls .zoom-label {
-            color: #aaa;
-            font-size: 14px;
-            min-width: 30px;
-        }
-        .map-controls .toggle-label {
-            color: #aaa;
+        .bottom-bar .grid-controls label {
             font-size: 12px;
-            margin: 0 4px;
+            color: #888;
         }
 
-        /* ===== ОСТАЛЬНЫЕ КНОПКИ ===== */
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 8px;
-            margin: 15px 0;
-        }
-        .controls button {
-            background: #34495e;
-            border: none;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 30px;
-            font-size: 20px;
-            min-height: 50px;
-            min-width: 50px;
-            cursor: pointer;
-            touch-action: manipulation;
-            box-shadow: 0 3px 0 #1f2c38;
-            transition: 0.1s;
-        }
-        .controls button:active {
-            transform: translateY(3px);
-            box-shadow: none;
-        }
-        .controls button.danger {
-            background: #c0392b;
-            box-shadow: 0 3px 0 #78281f;
-        }
-        .controls button.d20 {
-            background: #2980b9;
-            box-shadow: 0 3px 0 #1a5276;
-        }
-        .controls button.gm-btn {
-            background: #8e44ad;
-            box-shadow: 0 3px 0 #6c3483;
-        }
-        .controls button.gm-btn.active {
-            background: #f1c40f;
-            color: #1e1e1e;
-            box-shadow: 0 3px 0 #d4ac0d;
-        }
-        .controls button.change-name-btn {
-            background: #27ae60;
-            box-shadow: 0 3px 0 #1e8449;
-        }
-
-        /* ===== ВЫБОР КАРТЫ ===== */
-        .map-selector {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 8px;
-            margin: 10px 0;
-        }
-        .map-selector button {
-            background: #2c3e50;
-            border: 2px solid #555;
-            color: white;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.2s;
-            touch-action: manipulation;
-            min-height: 44px;
-        }
-        .map-selector button:hover {
-            background: #34495e;
-            border-color: #f1c40f;
-        }
-        .map-selector button:active {
-            transform: scale(0.95);
-        }
-        .map-selector button.active {
-            border-color: #f1c40f;
-            background: #34495e;
-        }
-        .map-selector button.disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        /* ===== КУБИКИ ===== */
-        .dice-area {
-            font-size: 48px;
-            background: #2a2a2a;
-            padding: 10px 25px;
-            display: inline-block;
-            border-radius: 20px;
-            margin: 5px 0;
-            min-width: 100px;
-        }
-        .log {
-            font-size: 18px;
-            color: #aaa;
-            min-height: 30px;
-            padding: 10px;
-        }
-
+        /* ===== ИКОНКИ ===== */
         .icon-picker {
             display: none;
             background: #2a2a2a;
-            padding: 10px;
-            border-radius: 15px;
-            margin: 5px auto;
+            padding: 8px;
+            border-radius: 12px;
+            margin: 4px auto;
             max-width: 350px;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 5px;
+            gap: 4px;
             border: 2px solid #555;
         }
         .icon-picker.active {
             display: flex;
         }
         .icon-picker button {
-            font-size: 30px;
+            font-size: 28px;
             background: #444;
             border: 2px solid transparent;
-            border-radius: 10px;
-            padding: 5px 12px;
-            min-height: 50px;
+            border-radius: 8px;
+            padding: 4px 10px;
+            min-height: 44px;
             cursor: pointer;
         }
 
-        /* ===== ЛОГ БРОСКОВ ===== */
+        /* ===== ЛОГ БРОСКОВ (внизу) ===== */
         .roll-log-container {
-            max-width: 600px;
-            margin: 15px auto 0 auto;
-            background: rgba(20, 20, 20, 0.95);
-            border-radius: 12px;
-            padding: 10px 15px;
-            border: 1px solid #333;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            width: 95vw;
-            max-height: 180px;
+            max-height: 120px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px 12px;
+            border-top: 1px solid #333;
+            flex-shrink: 0;
         }
         .roll-log-container::-webkit-scrollbar {
-            width: 4px;
-        }
-        .roll-log-container::-webkit-scrollbar-track {
-            background: transparent;
+            width: 3px;
         }
         .roll-log-container::-webkit-scrollbar-thumb {
             background: #444;
             border-radius: 10px;
         }
         .roll-log-title {
-            font-size: 12px;
-            color: #888;
+            font-size: 10px;
+            color: #666;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 5px;
-            border-bottom: 1px solid #2a2a2a;
-            padding-bottom: 5px;
-            text-align: left;
+            margin-bottom: 2px;
         }
         .roll-log-entry {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            padding: 4px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            color: #eee;
-            text-align: left;
+            gap: 8px;
+            font-size: 13px;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #ddd;
         }
         .roll-log-entry:last-child {
             border-bottom: none;
@@ -430,28 +388,25 @@
         .roll-log-entry .roll-player {
             color: #f1c40f;
             font-weight: bold;
-            white-space: nowrap;
+            font-size: 12px;
+            max-width: 70px;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 80px;
-            font-size: 13px;
-            flex-shrink: 0;
+            white-space: nowrap;
         }
         .roll-log-entry .roll-dice {
             color: #888;
-            font-size: 12px;
-            flex-shrink: 0;
+            font-size: 11px;
         }
         .roll-log-entry .roll-value {
             color: #fff;
             font-weight: bold;
             background: #2a2a2a;
-            padding: 0 10px;
+            padding: 0 8px;
             border-radius: 4px;
-            min-width: 30px;
+            min-width: 24px;
             text-align: center;
-            font-size: 14px;
-            flex-shrink: 0;
+            font-size: 13px;
         }
         .roll-log-entry .roll-crit {
             color: #f1c40f;
@@ -464,9 +419,8 @@
         .roll-log-empty {
             color: #555;
             font-style: italic;
-            font-size: 13px;
-            padding: 5px 0;
-            text-align: center;
+            font-size: 12px;
+            padding: 4px 0;
         }
 
         @keyframes pulseGold {
@@ -483,24 +437,23 @@
         /* ===== ТОСТ ===== */
         .roll-toast {
             position: fixed;
-            bottom: 20px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.85);
             color: #fff;
-            padding: 8px 20px;
-            border-radius: 10px;
-            font-size: 15px;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 14px;
             border: 1px solid #f1c40f;
             z-index: 999;
             animation: slideUp 0.3s ease, fadeOut 3s ease 2.5s forwards;
             pointer-events: none;
             max-width: 90%;
             white-space: nowrap;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
         }
         @keyframes slideUp {
-            0% { transform: translateX(-50%) translateY(30px); opacity: 0; }
+            0% { transform: translateX(-50%) translateY(20px); opacity: 0; }
             100% { transform: translateX(-50%) translateY(0); opacity: 1; }
         }
         @keyframes fadeOut {
@@ -508,37 +461,16 @@
             100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
         }
 
-        .hint {
-            color: #666;
-            font-size: 13px;
-            margin: 10px;
-        }
-        .player-id {
-            color: #f1c40f;
-            font-size: 16px;
-            margin: 5px;
-            font-weight: bold;
-        }
-        .gm-indicator {
-            color: #8e44ad;
-            font-size: 14px;
-            margin: 5px;
-        }
-
-        /* ===== АДАПТАЦИЯ ПОД ТЕЛЕФОН ===== */
+        /* ===== АДАПТАЦИЯ ===== */
         @media (max-width: 600px) {
-            .map-wrapper {
-                max-height: 60vh;
-            }
-            .map-controls .zoom-slider {
-                width: 60px;
-            }
-            .map-controls button {
-                font-size: 14px;
-                padding: 4px 10px;
-                min-height: 34px;
-                min-width: 34px;
-            }
+            h1 { font-size: 16px; margin: 4px 0; }
+            .top-bar button { font-size: 11px; padding: 2px 8px; min-height: 26px; }
+            .bottom-bar button { font-size: 14px; padding: 4px 10px; min-height: 32px; min-width: 32px; }
+            .bottom-bar .dice-area { font-size: 26px; padding: 2px 12px; min-width: 44px; }
+            .bottom-bar .grid-controls input[type="range"] { width: 60px; }
+            .token { font-size: 18px; min-width: 24px; min-height: 24px; max-width: 40px; max-height: 40px; }
+            .roll-log-container { max-height: 80px; }
+            .roll-log-entry { font-size: 11px; }
         }
     </style>
 </head>
@@ -556,52 +488,34 @@
         </div>
     </div>
 
-    <div class="player-id" id="playerId">Загрузка...</div>
-    <div class="gm-indicator" id="gmIndicator"></div>
+    <!-- ===== ВЕРХНЯЯ ПАНЕЛЬ ===== -->
+    <div class="top-bar">
+        <span class="player-id" id="playerId">Загрузка...</span>
+        <span class="gm-indicator" id="gmIndicator"></span>
+        <button onclick="toggleGM()" class="gm-btn" id="gmToggleBtn">👑 GM</button>
+        <button onclick="showChangeName()">✏️ Сменить ник</button>
+        <button onclick="showIconPicker()">➕ Добавить</button>
+        <button class="danger" onclick="clearTokens()">🗑️</button>
+        <button onclick="toggleGrid()" class="active" id="gridToggleBtn">📐</button>
+        <button onclick="toggleSnap()" class="active" id="snapToggleBtn">🎯</button>
+    </div>
 
     <!-- ===== КАРТА ===== -->
     <div class="map-wrapper" id="mapWrapper">
         <div class="map-inner" id="mapInner">
             <img class="map-image" id="mapImage" src="images/forest.jpg" alt="Карта">
-            <div class="grid-overlay" id="gridOverlay">
-                <!-- клетки генерируются JS -->
-            </div>
+            <div class="grid-overlay" id="gridOverlay"></div>
             <div class="tokens-layer" id="tokensLayer"></div>
         </div>
     </div>
 
-    <!-- ===== УПРАВЛЕНИЕ КАРТОЙ ===== -->
-    <div class="map-controls">
-        <button onclick="zoomOut()" title="Отдалить">➖</button>
-        <span class="zoom-label" id="zoomLabel">100%</span>
-        <button onclick="zoomIn()" title="Приблизить">➕</button>
-        <button onclick="resetZoom()" title="Сбросить масштаб">⟲</button>
-        <span class="toggle-label">|</span>
-        <button id="snapToggleBtn" onclick="toggleSnap()" class="active">🎯 Прилипание</button>
-        <button id="gridToggleBtn" onclick="toggleGrid()" class="active">📐 Сетка</button>
-    </div>
-
-    <!-- ===== ВЫБОР КАРТЫ ===== -->
-    <div class="map-selector" id="mapSelector">
-        <button onclick="changeMap('forest')" data-map="forest" class="active">🌲 Лес</button>
-        <button onclick="changeMap('dungeon')" data-map="dungeon">🏚️ Подземелье</button>
-        <button onclick="changeMap('castle')" data-map="castle">🏰 Замок</button>
-        <button onclick="changeMap('tavern')" data-map="tavern">🍺 Таверна</button>
-        <button onclick="changeMap('cave')" data-map="cave">🕳️ Пещера</button>
-    </div>
-
-    <!-- ===== КНОПКИ ===== -->
-    <div class="controls">
-        <button onclick="showIconPicker()">➕ Добавить</button>
-        <button class="danger" onclick="clearTokens()">🗑️ Очистить</button>
-        <button class="d20" onclick="rollDice(20)">🎲 d20</button>
-        <button onclick="rollDice(6)">d6</button>
-        <button onclick="rollDice(8)">d8</button>
-        <button onclick="rollDice(10)">d10</button>
-        <button onclick="rollDice(12)">d12</button>
-        <button onclick="rollDice(100)">d100</button>
-        <button class="gm-btn" id="gmToggleBtn" onclick="toggleGM()">👑 GM</button>
-        <button class="change-name-btn" onclick="showChangeName()">✏️ Сменить ник</button>
+    <!-- ===== ВЫБОР КАРТЫ (всплывающий) ===== -->
+    <div class="top-bar" style="border-bottom: none; background: #1a1a1a; gap: 4px;">
+        <button onclick="changeMap('forest')" data-map="forest" class="active" style="font-size:12px;">🌲 Лес</button>
+        <button onclick="changeMap('dungeon')" data-map="dungeon" style="font-size:12px;">🏚️ Подземелье</button>
+        <button onclick="changeMap('castle')" data-map="castle" style="font-size:12px;">🏰 Замок</button>
+        <button onclick="changeMap('tavern')" data-map="tavern" style="font-size:12px;">🍺 Таверна</button>
+        <button onclick="changeMap('cave')" data-map="cave" style="font-size:12px;">🕳️ Пещера</button>
     </div>
 
     <!-- ===== ВЫБОР ИКОНОК ===== -->
@@ -619,9 +533,28 @@
         <button onclick="hideIconPicker()" style="background:#c0392b;">✖</button>
     </div>
 
-    <!-- ===== КУБИКИ ===== -->
-    <div class="dice-area" id="diceDisplay">🎲</div>
-    <div class="log" id="log">Добро пожаловать!</div>
+    <!-- ===== НИЖНЯЯ ПАНЕЛЬ ===== -->
+    <div class="bottom-bar">
+        <button onclick="zoomOut()">➖</button>
+        <span id="zoomLabel" style="font-size:13px; color:#aaa; min-width:40px;">100%</span>
+        <button onclick="zoomIn()">➕</button>
+        <button onclick="resetZoom()" style="font-size:14px;">⟲</button>
+        
+        <div class="grid-controls">
+            <label>📐</label>
+            <input type="range" id="gridSizeSlider" min="4" max="20" value="10" step="1">
+            <span id="gridSizeLabel" style="font-size:12px; color:#888; min-width:30px;">10</span>
+        </div>
+
+        <div class="dice-area" id="diceDisplay">🎲</div>
+        <button class="d20" onclick="rollDice(20)">d20</button>
+        <button onclick="rollDice(6)">d6</button>
+        <button onclick="rollDice(8)">d8</button>
+        <button onclick="rollDice(10)">d10</button>
+        <button onclick="rollDice(12)">d12</button>
+        <button onclick="rollDice(100)">d100</button>
+        <span class="log" id="log">Привет!</span>
+    </div>
 
     <!-- ===== ЛОГ БРОСКОВ ===== -->
     <div class="roll-log-container" id="rollLogContainer">
@@ -630,8 +563,6 @@
             <div class="roll-log-empty">Броски будут здесь...</div>
         </div>
     </div>
-
-    <div class="hint">👆 Двигай карту пальцами, приближай двумя пальцами. Перетаскивай фигурки.</div>
 
     <script>
         // ============================================
@@ -672,14 +603,8 @@
         function saveNickname() {
             const input = document.getElementById('nicknameInput');
             const name = input.value.trim();
-            if (name.length === 0) {
-                alert('❌ Введи хотя бы один символ!');
-                return;
-            }
-            if (name.length > 20) {
-                alert('❌ Ник не может быть длиннее 20 символов!');
-                return;
-            }
+            if (name.length === 0) { alert('❌ Введи хотя бы один символ!'); return; }
+            if (name.length > 20) { alert('❌ Ник не может быть длиннее 20 символов!'); return; }
             playerName = name;
             displayName = name;
             localStorage.setItem('dnd_player_name', name);
@@ -699,14 +624,8 @@
             const newName = prompt('✏️ Введи новый ник:', displayName);
             if (newName === null) return;
             const trimmed = newName.trim();
-            if (trimmed.length === 0) {
-                alert('❌ Ник не может быть пустым!');
-                return;
-            }
-            if (trimmed.length > 20) {
-                alert('❌ Ник не может быть длиннее 20 символов!');
-                return;
-            }
+            if (trimmed.length === 0) { alert('❌ Ник не может быть пустым!'); return; }
+            if (trimmed.length > 20) { alert('❌ Ник не может быть длиннее 20 символов!'); return; }
             playerName = trimmed;
             displayName = trimmed;
             localStorage.setItem('dnd_player_name', trimmed);
@@ -724,12 +643,11 @@
                 updateMapButtons();
                 return;
             }
-
             const password = prompt('👑 Введите пароль GM:');
             if (password === null) return;
             if (password === GM_PASSWORD) {
                 isGM = true;
-                document.getElementById('gmIndicator').textContent = '👑 РЕЖИМ GM ВКЛЮЧЕН';
+                document.getElementById('gmIndicator').textContent = '👑 GM';
                 document.getElementById('gmIndicator').style.color = '#f1c40f';
                 document.getElementById('gmToggleBtn').classList.add('active');
                 document.getElementById('log').textContent = '👑 Режим GM включен!';
@@ -745,7 +663,7 @@
         let scale = 1;
         let panX = 0;
         let panY = 0;
-        let isDragging = false;
+        let isDraggingMap = false;
         let startX, startY, startPanX, startPanY;
         let lastTouchDist = 0;
 
@@ -759,19 +677,16 @@
             zoomLabel.textContent = Math.round(scale * 100) + '%';
             
             // Масштабируем фигурки
-            const tokens = document.querySelectorAll('.token');
-            tokens.forEach(token => {
-                const baseSize = 28;
-                const newSize = Math.min(50, Math.max(22, baseSize * scale));
+            document.querySelectorAll('.token').forEach(token => {
+                const baseSize = 26;
+                const newSize = Math.min(48, Math.max(20, baseSize * scale));
                 token.style.fontSize = newSize + 'px';
-                // Размер кружка тоже подгоняем
-                const sizePercent = Math.min(14, Math.max(8, 10 * scale));
+                const sizePercent = Math.min(14, Math.max(7, 9 * scale));
                 token.style.width = sizePercent + '%';
                 token.style.height = (sizePercent * 1.66) + '%';
             });
         }
 
-        // ===== ЗУМ КНОПКАМИ =====
         function zoomIn() {
             scale = Math.min(3, scale + 0.15);
             updateTransform();
@@ -792,7 +707,7 @@
         // ===== ПЕРЕТАСКИВАНИЕ КАРТЫ (мышь) =====
         mapWrapper.addEventListener('mousedown', function(e) {
             if (e.target.closest('.token')) return;
-            isDragging = true;
+            isDraggingMap = true;
             startX = e.clientX;
             startY = e.clientY;
             startPanX = panX;
@@ -801,7 +716,7 @@
         });
 
         window.addEventListener('mousemove', function(e) {
-            if (!isDragging) return;
+            if (!isDraggingMap) return;
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
             panX = startPanX + dx;
@@ -810,7 +725,7 @@
         });
 
         window.addEventListener('mouseup', function() {
-            isDragging = false;
+            isDraggingMap = false;
             mapWrapper.style.cursor = 'grab';
         });
 
@@ -818,7 +733,7 @@
         mapWrapper.addEventListener('touchstart', function(e) {
             if (e.target.closest('.token')) return;
             if (e.touches.length === 1) {
-                isDragging = true;
+                isDraggingMap = true;
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
                 startPanX = panX;
@@ -827,22 +742,19 @@
         }, { passive: true });
 
         mapWrapper.addEventListener('touchmove', function(e) {
-            if (e.touches.length === 1 && isDragging) {
+            if (e.touches.length === 1 && isDraggingMap) {
                 const dx = e.touches[0].clientX - startX;
                 const dy = e.touches[0].clientY - startY;
                 panX = startPanX + dx;
                 panY = startPanY + dy;
                 updateTransform();
             }
-            // ===== PINCH-TO-ZOOM =====
             if (e.touches.length === 2) {
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+                const t1 = e.touches[0], t2 = e.touches[1];
+                const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
                 if (lastTouchDist > 0) {
                     const delta = dist - lastTouchDist;
-                    const newScale = Math.min(3, Math.max(0.3, scale + delta * 0.005));
-                    scale = newScale;
+                    scale = Math.min(3, Math.max(0.3, scale + delta * 0.005));
                     updateTransform();
                 }
                 lastTouchDist = dist;
@@ -851,7 +763,7 @@
         }, { passive: false });
 
         mapWrapper.addEventListener('touchend', function() {
-            isDragging = false;
+            isDraggingMap = false;
             lastTouchDist = 0;
         }, { passive: true });
 
@@ -860,25 +772,44 @@
         // ============================================
         let snapEnabled = true;
         let gridVisible = true;
-        const GRID_COLS = 10;
-        const GRID_ROWS = 6;
+        let gridCols = 10;
+        let gridRows = 6;
+
+        const gridOverlay = document.getElementById('gridOverlay');
+        const gridSizeSlider = document.getElementById('gridSizeSlider');
+        const gridSizeLabel = document.getElementById('gridSizeLabel');
 
         function buildGrid() {
-            const overlay = document.getElementById('gridOverlay');
-            overlay.innerHTML = '';
-            overlay.style.gridTemplateColumns = 'repeat(' + GRID_COLS + ', 1fr)';
-            overlay.style.gridTemplateRows = 'repeat(' + GRID_ROWS + ', 1fr)';
-            for (let i = 0; i < GRID_COLS * GRID_ROWS; i++) {
+            gridOverlay.innerHTML = '';
+            gridOverlay.style.gridTemplateColumns = 'repeat(' + gridCols + ', 1fr)';
+            gridOverlay.style.gridTemplateRows = 'repeat(' + gridRows + ', 1fr)';
+            for (let i = 0; i < gridCols * gridRows; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                overlay.appendChild(cell);
+                gridOverlay.appendChild(cell);
             }
         }
         buildGrid();
 
+        gridSizeSlider.addEventListener('input', function() {
+            if (!isGM) {
+                document.getElementById('log').textContent = '⛔ Только GM может менять сетку!';
+                gridSizeSlider.value = gridCols;
+                return;
+            }
+            gridCols = parseInt(this.value);
+            gridRows = Math.round(gridCols * 0.6);
+            if (gridRows < 3) gridRows = 3;
+            gridSizeLabel.textContent = gridCols + 'x' + gridRows;
+            buildGrid();
+            // Пересчитываем позиции фигурок под новую сетку
+            recalcTokenPositions();
+            document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
+        });
+
         function toggleGrid() {
             gridVisible = !gridVisible;
-            document.getElementById('gridOverlay').classList.toggle('hidden');
+            gridOverlay.classList.toggle('hidden');
             document.getElementById('gridToggleBtn').classList.toggle('active');
         }
 
@@ -892,10 +823,10 @@
         }
 
         // ============================================
-        // ФИГУРКИ
+        // ФИГУРКИ (мгновенная синхронизация)
         // ============================================
         const tokensLayer = document.getElementById('tokensLayer');
-        let tokens = [];
+        let tokens = {};
         let nextId = 1;
         let draggedToken = null;
         let dragOffsetX = 0, dragOffsetY = 0;
@@ -903,8 +834,8 @@
 
         function getSnappedPosition(x, y) {
             if (!snapEnabled) return { x, y };
-            const cellW = 100 / GRID_COLS;
-            const cellH = 100 / GRID_ROWS;
+            const cellW = 100 / gridCols;
+            const cellH = 100 / gridRows;
             const col = Math.round(x / cellW);
             const row = Math.round(y / cellH);
             return {
@@ -913,96 +844,129 @@
             };
         }
 
-        function loadTokens() {
-            const tokensRef = db.ref('tokens');
-            tokensRef.on('value', (snapshot) => {
-                if (isLocalUpdate) return;
-                const data = snapshot.val();
-                if (data) {
-                    tokens = Object.values(data);
-                    nextId = tokens.reduce((max, t) => Math.max(max, t.id), 0) + 1;
-                } else {
-                    tokens = [];
-                }
-                renderTokens();
+        function recalcTokenPositions() {
+            Object.values(tokens).forEach(token => {
+                const pos = getSnappedPosition(token.x, token.y);
+                token.x = pos.x;
+                token.y = pos.y;
             });
+            saveTokens();
+            renderTokens();
         }
 
-        function saveTokens() {
-            isLocalUpdate = true;
-            const tokensRef = db.ref('tokens');
-            const data = {};
-            tokens.forEach(t => { data[t.id] = t; });
-            tokensRef.set(data).then(() => { isLocalUpdate = false; });
-        }
+        // Загрузка токенов через child_added (мгновенно!)
+        const tokensRef = db.ref('tokens');
 
-        function renderTokens() {
-            tokensLayer.innerHTML = '';
-            tokens.forEach(token => {
-                const el = document.createElement('div');
+        tokensRef.on('child_added', function(snapshot) {
+            if (isLocalUpdate) return;
+            const data = snapshot.val();
+            const id = parseInt(snapshot.key);
+            if (id > nextId) nextId = id + 1;
+            tokens[id] = data;
+            renderToken(id);
+        });
+
+        tokensRef.on('child_changed', function(snapshot) {
+            if (isLocalUpdate) return;
+            const data = snapshot.val();
+            const id = parseInt(snapshot.key);
+            tokens[id] = data;
+            renderToken(id);
+        });
+
+        tokensRef.on('child_removed', function(snapshot) {
+            if (isLocalUpdate) return;
+            const id = parseInt(snapshot.key);
+            delete tokens[id];
+            const el = tokensLayer.querySelector(`[data-id="${id}"]`);
+            if (el) el.remove();
+        });
+
+        function renderToken(id) {
+            const token = tokens[id];
+            if (!token) return;
+            let el = tokensLayer.querySelector(`[data-id="${id}"]`);
+            if (!el) {
+                el = document.createElement('div');
                 el.className = 'token';
                 if (snapEnabled) el.classList.add('snap');
-                el.textContent = token.icon;
-                el.dataset.id = token.id;
-                el.style.left = token.x + '%';
-                el.style.top = token.y + '%';
-
-                // Масштабируем размер под текущий зум
-                const baseSize = 28;
-                const newSize = Math.min(50, Math.max(22, baseSize * scale));
-                el.style.fontSize = newSize + 'px';
-                const sizePercent = Math.min(14, Math.max(8, 10 * scale));
-                el.style.width = sizePercent + '%';
-                el.style.height = (sizePercent * 1.66) + '%';
-
-                el.addEventListener('dblclick', () => deleteToken(token.id));
+                el.dataset.id = id;
+                el.addEventListener('dblclick', () => deleteToken(id));
                 el.addEventListener('touchstart', (e) => {
                     const timer = setTimeout(() => {
                         if (navigator.vibrate) navigator.vibrate(50);
-                        deleteToken(token.id);
+                        deleteToken(id);
                     }, 800);
                     el._timer = timer;
                 });
                 el.addEventListener('touchend', () => clearTimeout(el._timer));
                 el.addEventListener('touchmove', () => clearTimeout(el._timer));
-
-                el.addEventListener('mousedown', (e) => startDrag(e, token.id));
-                el.addEventListener('touchstart', (e) => startDrag(e, token.id), { passive: false });
-
+                el.addEventListener('mousedown', (e) => startDrag(e, id));
+                el.addEventListener('touchstart', (e) => startDrag(e, id), { passive: false });
                 tokensLayer.appendChild(el);
-            });
+            }
+            el.textContent = token.icon;
+            el.style.left = token.x + '%';
+            el.style.top = token.y + '%';
+            
+            // Масштабирование
+            const baseSize = 26;
+            const newSize = Math.min(48, Math.max(20, baseSize * scale));
+            el.style.fontSize = newSize + 'px';
+            const sizePercent = Math.min(14, Math.max(7, 9 * scale));
+            el.style.width = sizePercent + '%';
+            el.style.height = (sizePercent * 1.66) + '%';
+        }
+
+        function renderTokens() {
+            tokensLayer.innerHTML = '';
+            Object.values(tokens).forEach(t => renderToken(t.id));
         }
 
         function deleteToken(id) {
-            tokens = tokens.filter(t => t.id !== id);
-            saveTokens();
+            if (!isGM) {
+                document.getElementById('log').textContent = '⛔ Только GM может удалять!';
+                return;
+            }
+            isLocalUpdate = true;
+            tokensRef.child(id).remove().then(() => {
+                isLocalUpdate = false;
+            });
             document.getElementById('log').textContent = '🗑️ Удалён персонаж';
         }
 
         function addToken(icon) {
-            // Случайная позиция со смещением, чтобы не накладывались
-            const offsetX = (Math.random() - 0.5) * 10;
-            const offsetY = (Math.random() - 0.5) * 10;
+            const offsetX = (Math.random() - 0.5) * 8;
+            const offsetY = (Math.random() - 0.5) * 8;
             const pos = getSnappedPosition(50 + offsetX, 50 + offsetY);
-            const token = { id: nextId++, icon: icon, x: pos.x, y: pos.y };
-            tokens.push(token);
-            saveTokens();
+            const id = nextId++;
+            const tokenData = { icon: icon, x: pos.x, y: pos.y };
+            isLocalUpdate = true;
+            tokensRef.child(id).set(tokenData).then(() => {
+                isLocalUpdate = false;
+            });
             hideIconPicker();
             if (navigator.vibrate) navigator.vibrate(20);
             document.getElementById('log').textContent = '➕ Добавлен ' + icon;
         }
 
         function clearTokens() {
-            if (tokens.length === 0) return;
+            if (!isGM) {
+                document.getElementById('log').textContent = '⛔ Только GM может очищать!';
+                return;
+            }
+            if (Object.keys(tokens).length === 0) return;
             if (confirm('Удалить всех персонажей?')) {
-                tokens = [];
-                saveTokens();
+                isLocalUpdate = true;
+                tokensRef.set(null).then(() => {
+                    isLocalUpdate = false;
+                });
                 document.getElementById('log').textContent = '🗑️ Все удалены';
             }
         }
 
         function showIconPicker() {
-            document.getElementById('iconPicker').classList.add('active');
+            document.getElementById('iconPicker').classList.toggle('active');
         }
 
         function hideIconPicker() {
@@ -1012,7 +976,7 @@
         // ========== ПЕРЕТАСКИВАНИЕ ФИГУРОК ==========
         function startDrag(e, tokenId) {
             e.preventDefault();
-            const token = tokens.find(t => t.id === tokenId);
+            const token = tokens[tokenId];
             if (!token) return;
 
             const rect = mapWrapper.getBoundingClientRect();
@@ -1029,7 +993,7 @@
             const tokenY = (clientY - rect.top) / rect.height * 100;
             dragOffsetX = tokenX - token.x;
             dragOffsetY = tokenY - token.y;
-            draggedToken = token;
+            draggedToken = tokenId;
 
             window.addEventListener('mousemove', onDrag);
             window.addEventListener('mouseup', endDrag);
@@ -1038,8 +1002,11 @@
         }
 
         function onDrag(e) {
-            if (!draggedToken) return;
+            if (draggedToken === null) return;
             e.preventDefault();
+            const token = tokens[draggedToken];
+            if (!token) return;
+
             const rect = mapWrapper.getBoundingClientRect();
             let clientX, clientY;
             if (e.type === 'touchmove') {
@@ -1062,10 +1029,10 @@
                 newY = Math.max(0, Math.min(100, newY));
             }
 
-            draggedToken.x = newX;
-            draggedToken.y = newY;
+            token.x = newX;
+            token.y = newY;
 
-            const el = tokensLayer.querySelector(`[data-id="${draggedToken.id}"]`);
+            const el = tokensLayer.querySelector(`[data-id="${draggedToken}"]`);
             if (el) {
                 el.style.left = newX + '%';
                 el.style.top = newY + '%';
@@ -1073,8 +1040,12 @@
         }
 
         function endDrag(e) {
-            if (draggedToken) {
-                saveTokens();
+            if (draggedToken !== null && tokens[draggedToken]) {
+                const token = tokens[draggedToken];
+                isLocalUpdate = true;
+                tokensRef.child(draggedToken).set(token).then(() => {
+                    isLocalUpdate = false;
+                });
                 draggedToken = null;
             }
             window.removeEventListener('mousemove', onDrag);
@@ -1104,7 +1075,6 @@
                 document.getElementById('log').textContent = '⛔ Только GM может менять карту!';
                 return;
             }
-
             isLocalMapUpdate = true;
             currentMap = mapName;
             mapRef.set(mapName).then(() => {
@@ -1117,26 +1087,17 @@
 
         function updateMapUI(mapName) {
             mapImage.src = 'images/' + mapName + '.jpg';
-            document.querySelectorAll('.map-selector button').forEach(btn => {
+            document.querySelectorAll('.top-bar button[data-map]').forEach(btn => {
                 btn.classList.remove('active');
+                if (btn.dataset.map === mapName) btn.classList.add('active');
             });
-            const buttons = document.querySelectorAll('.map-selector button');
-            const mapNames = ['forest', 'dungeon', 'castle', 'tavern', 'cave'];
-            const index = mapNames.indexOf(mapName);
-            if (index !== -1 && buttons[index]) {
-                buttons[index].classList.add('active');
-            }
-            // Сбрасываем зум при смене карты
             resetZoom();
         }
 
         function updateMapButtons() {
-            document.querySelectorAll('.map-selector button').forEach(btn => {
-                if (isGM) {
-                    btn.classList.remove('disabled');
-                } else {
-                    btn.classList.add('disabled');
-                }
+            document.querySelectorAll('.top-bar button[data-map]').forEach(btn => {
+                btn.style.opacity = isGM ? '1' : '0.5';
+                btn.style.cursor = isGM ? 'pointer' : 'not-allowed';
             });
         }
 
@@ -1152,49 +1113,39 @@
         // ============================================
         // ЛОГ БРОСКОВ
         // ============================================
-        const MAX_LOG_ENTRIES = 12;
+        const MAX_LOG_ENTRIES = 10;
 
         function addLogEntry(player, sides, result) {
             const container = document.getElementById('rollLogEntries');
-            
             const empty = container.querySelector('.roll-log-empty');
             if (empty) empty.remove();
             
             const entry = document.createElement('div');
             entry.className = 'roll-log-entry';
-            
             let valueHtml = '<span class="roll-value">' + result + '</span>';
             if (sides === 20 && result === 20) {
                 valueHtml = '<span class="roll-value roll-crit">' + result + ' 🔥</span>';
             } else if (sides === 20 && result === 1) {
                 valueHtml = '<span class="roll-value roll-fail">' + result + ' 💀</span>';
             }
-            
             entry.innerHTML = 
                 '<span class="roll-player">' + player + '</span>' +
                 '<span class="roll-dice">d' + sides + '</span>' +
                 valueHtml;
-            
             container.prepend(entry);
-            
             while (container.children.length > MAX_LOG_ENTRIES) {
                 container.removeChild(container.lastChild);
             }
         }
 
-        // ========== ПОКАЗ ТОСТА ==========
         function showRollToast(msg) {
-            const oldToasts = document.querySelectorAll('.roll-toast');
-            oldToasts.forEach(el => el.remove());
-
+            const old = document.querySelectorAll('.roll-toast');
+            old.forEach(el => el.remove());
             const div = document.createElement('div');
             div.className = 'roll-toast';
             div.textContent = msg;
             document.body.appendChild(div);
-
-            setTimeout(() => {
-                div.remove();
-            }, 3000);
+            setTimeout(() => div.remove(), 3000);
         }
 
         // ============================================
@@ -1202,16 +1153,12 @@
         // ============================================
         function rollDice(sides) {
             let result = Math.floor(Math.random() * sides) + 1;
-
+            let crit = false, fail = false;
             let msg = displayName + ' кинул d' + sides + ': ' + result;
-            let crit = false;
-            let fail = false;
             if (sides === 20 && result === 20) { crit = true; msg += ' 🔥 КРИТ!'; }
             if (sides === 20 && result === 1) { fail = true; msg += ' 💀 ПРОВАЛ!'; }
 
-            let display = document.getElementById('diceDisplay');
-            display.textContent = '⏳';
-
+            document.getElementById('diceDisplay').textContent = '⏳';
             addLogEntry(displayName, sides, result);
 
             const rollRef = db.ref('rolls');
@@ -1225,41 +1172,30 @@
             });
 
             setTimeout(() => {
-                display.textContent = '🎲 ' + result;
+                document.getElementById('diceDisplay').textContent = '🎲 ' + result;
                 document.getElementById('log').textContent = 'Твой бросок: ' + result;
             }, 200);
         }
 
-        // ============================================
-        // СЛУШАЕМ БРОСКИ ДРУГИХ
-        // ============================================
         const rollRef = db.ref('rolls');
         rollRef.limitToLast(1).on('child_added', function(snapshot) {
             const data = snapshot.val();
             if (data.player === displayName) return;
-
             addLogEntry(data.player, data.sides, data.result);
-
             let msg = '🎲 ' + data.player + ' кинул d' + data.sides + ': ' + data.result;
             if (data.crit) msg += ' 🔥';
             if (data.fail) msg += ' 💀';
             showRollToast(msg);
-
-            const display = document.getElementById('diceDisplay');
-            display.textContent = '⏳';
+            document.getElementById('diceDisplay').textContent = '⏳';
             setTimeout(() => {
-                display.textContent = '🎲 ' + data.result;
+                document.getElementById('diceDisplay').textContent = '🎲 ' + data.result;
             }, 200);
         });
 
         // ============================================
         // ЗАПУСК
         // ============================================
-        loadTokens();
-
-        // Инициализация состояния кнопок
-        document.getElementById('snapToggleBtn').classList.add('active');
-        document.getElementById('gridToggleBtn').classList.add('active');
+        gridSizeLabel.textContent = gridCols + 'x' + gridRows;
         updateTransform();
 
         if (!playerName) {
