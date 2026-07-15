@@ -255,13 +255,6 @@
             top: 0;
             z-index: 10;
             transition: filter 0.2s;
-            width: 10%;
-            height: 16.6%;
-            min-width: 28px;
-            min-height: 28px;
-            max-width: 50px;
-            max-height: 50px;
-            font-size: 22px;
             will-change: transform, width, height, font-size;
         }
         .token:active {
@@ -308,7 +301,7 @@
             min-width: 40px;
         }
         .map-controls input[type="range"] {
-            width: 80px;
+            width: 100px;
             accent-color: #f1c40f;
             cursor: pointer;
             touch-action: manipulation;
@@ -317,6 +310,11 @@
             color: #888;
             font-size: 12px;
             min-width: 40px;
+        }
+        .map-controls .grid-size-label {
+            color: #aaa;
+            font-size: 13px;
+            min-width: 50px;
         }
 
         /* ===== КНОПКИ КУБИКОВ ===== */
@@ -516,10 +514,10 @@
             .top-bar button { font-size: 11px; padding: 2px 8px; min-height: 26px; }
             .top-bar button[data-map] { font-size: 10px; padding: 2px 6px; min-height: 24px; }
             .map-controls button { font-size: 12px; padding: 2px 8px; min-height: 28px; }
-            .map-controls input[type="range"] { width: 60px; }
+            .map-controls input[type="range"] { width: 70px; }
+            .map-controls .grid-label { font-size: 10px; min-width: 30px; }
             .dice-controls button { font-size: 14px; padding: 4px 10px; min-height: 32px; min-width: 32px; }
             .dice-controls .dice-area { font-size: 26px; padding: 2px 12px; min-width: 44px; }
-            .token { font-size: 18px; min-width: 24px; min-height: 24px; max-width: 40px; max-height: 40px; }
             .roll-log-container { max-height: 100px; }
             .roll-log-entry { font-size: 11px; }
             .roll-log-entry .roll-player { max-width: 50px; font-size: 10px; }
@@ -527,8 +525,8 @@
 
         @media (max-width: 400px) {
             .top-bar button[data-map] { font-size: 9px; padding: 1px 4px; min-height: 20px; }
-            .map-controls input[type="range"] { width: 40px; }
-            .map-controls .grid-label { font-size: 10px; min-width: 30px; }
+            .map-controls input[type="range"] { width: 50px; }
+            .map-controls .grid-label { font-size: 9px; min-width: 25px; }
         }
     </style>
 </head>
@@ -583,9 +581,9 @@
         <button onclick="zoomIn()">➕</button>
         <button onclick="resetZoom()" style="font-size:14px;">⟲</button>
         <span style="color:#444;">|</span>
-        <span class="grid-label" id="gridSizeLabel">📐 10x6</span>
-        <input type="range" id="gridSizeSlider" min="4" max="20" value="10" step="1">
-        <span style="color:#444; font-size:12px;">размер</span>
+        <span class="grid-label">📐</span>
+        <input type="range" id="gridSizeSlider" min="4" max="40" value="10" step="1">
+        <span class="grid-size-label" id="gridSizeLabel">10x6</span>
     </div>
 
     <!-- ===== КУБИКИ ===== -->
@@ -734,15 +732,7 @@
         function updateTransform() {
             mapInner.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
             zoomLabel.textContent = Math.round(scale * 100) + '%';
-            
-            document.querySelectorAll('.token').forEach(token => {
-                const baseSize = 26;
-                const newSize = Math.min(48, Math.max(20, baseSize * scale));
-                token.style.fontSize = newSize + 'px';
-                const sizePercent = Math.min(14, Math.max(7, 9 * scale));
-                token.style.width = sizePercent + '%';
-                token.style.height = (sizePercent * 1.66) + '%';
-            });
+            updateTokenSizes();
         }
 
         function zoomIn() {
@@ -826,7 +816,7 @@
         }, { passive: true });
 
         // ============================================
-        // СЕТКА
+        // СЕТКА И РАЗМЕР ФИГУРОК
         // ============================================
         let snapEnabled = true;
         let gridVisible = true;
@@ -849,6 +839,30 @@
         }
         buildGrid();
 
+        // Обновляем размер фигурок в зависимости от размера клетки
+        function updateTokenSizes() {
+            // Размер клетки в процентах
+            const cellW = 100 / gridCols;
+            const cellH = 100 / gridRows;
+            // Фигурка занимает ~80% от клетки, но не меньше 20px и не больше 60px
+            const sizePercent = Math.min(cellW, cellH) * 0.8;
+            // Переводим в пиксели относительно контейнера
+            const containerRect = mapWrapper.getBoundingClientRect();
+            const containerSize = Math.min(containerRect.width, containerRect.height);
+            const pixelSize = Math.max(20, Math.min(60, containerSize * sizePercent / 100));
+            
+            document.querySelectorAll('.token').forEach(token => {
+                const fontSize = Math.max(14, Math.min(40, pixelSize * 0.85));
+                token.style.fontSize = fontSize + 'px';
+                token.style.width = sizePercent + '%';
+                token.style.height = sizePercent + '%';
+                token.style.minWidth = '16px';
+                token.style.minHeight = '16px';
+                token.style.maxWidth = '70px';
+                token.style.maxHeight = '70px';
+            });
+        }
+
         gridSizeSlider.addEventListener('change', function() {
             if (!isGM) {
                 document.getElementById('log').textContent = '⛔ Только GM может менять сетку!';
@@ -860,19 +874,19 @@
             if (newRows < 3) return;
             gridCols = newCols;
             gridRows = newRows;
-            gridSizeLabel.textContent = '📐 ' + gridCols + 'x' + gridRows;
+            gridSizeLabel.textContent = gridCols + 'x' + gridRows;
             buildGrid();
             recalcTokenPositions();
+            updateTokenSizes();
             document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
         });
 
-        // Также на input для более быстрой реакции на телефоне
+        // Обновляем label при движении ползунка
         gridSizeSlider.addEventListener('input', function() {
-            if (!isGM) return;
             const newCols = parseInt(this.value);
             const newRows = Math.round(newCols * 0.6);
             if (newRows < 3) return;
-            gridSizeLabel.textContent = '📐 ' + newCols + 'x' + newRows;
+            gridSizeLabel.textContent = newCols + 'x' + newRows;
         });
 
         function toggleGrid() {
@@ -891,7 +905,7 @@
         }
 
         // ============================================
-        // ФИГУРКИ (исправленная синхронизация)
+        // ФИГУРКИ
         // ============================================
         const tokensLayer = document.getElementById('tokensLayer');
         let tokens = {};
@@ -925,7 +939,6 @@
         // ===== ЗАГРУЗКА ТОКЕНОВ =====
         const tokensRef = db.ref('tokens');
 
-        // Загружаем все токены при старте
         tokensRef.once('value', function(snapshot) {
             const data = snapshot.val();
             if (data) {
@@ -935,10 +948,11 @@
                     if (numId >= nextId) nextId = numId + 1;
                 });
                 renderTokens();
+                // Обновляем размеры после рендера
+                setTimeout(updateTokenSizes, 50);
             }
         });
 
-        // Слушаем добавление новых токенов
         tokensRef.on('child_added', function(snapshot) {
             if (isLocalUpdate) return;
             const id = parseInt(snapshot.key);
@@ -947,7 +961,6 @@
             renderToken(id);
         });
 
-        // Слушаем изменение токенов
         tokensRef.on('child_changed', function(snapshot) {
             if (isLocalUpdate) return;
             const id = parseInt(snapshot.key);
@@ -956,7 +969,6 @@
             renderToken(id);
         });
 
-        // Слушаем удаление токенов
         tokensRef.on('child_removed', function(snapshot) {
             if (isLocalUpdate) return;
             const id = parseInt(snapshot.key);
@@ -992,17 +1004,20 @@
             el.style.left = token.x + '%';
             el.style.top = token.y + '%';
             
-            const baseSize = 26;
-            const newSize = Math.min(48, Math.max(20, baseSize * scale));
-            el.style.fontSize = newSize + 'px';
-            const sizePercent = Math.min(14, Math.max(7, 9 * scale));
+            // Размер фигурки будет установлен в updateTokenSizes()
+            // Но сразу задаём базовый размер, чтобы не было скачков
+            const cellW = 100 / gridCols;
+            const cellH = 100 / gridRows;
+            const sizePercent = Math.min(cellW, cellH) * 0.8;
             el.style.width = sizePercent + '%';
-            el.style.height = (sizePercent * 1.66) + '%';
+            el.style.height = sizePercent + '%';
+            el.style.fontSize = Math.max(14, sizePercent * 0.85) + 'px';
         }
 
         function renderTokens() {
             tokensLayer.innerHTML = '';
             Object.keys(tokens).forEach(id => renderToken(parseInt(id)));
+            setTimeout(updateTokenSizes, 50);
         }
 
         function saveTokens() {
@@ -1287,8 +1302,11 @@
         // ============================================
         // ЗАПУСК
         // ============================================
-        gridSizeLabel.textContent = '📐 ' + gridCols + 'x' + gridRows;
+        gridSizeLabel.textContent = gridCols + 'x' + gridRows;
         updateTransform();
+
+        // При изменении размера окна обновляем размеры фигурок
+        window.addEventListener('resize', updateTokenSizes);
 
         if (!playerName) {
             document.getElementById('log').textContent = '👋 Введи свой ник!';
