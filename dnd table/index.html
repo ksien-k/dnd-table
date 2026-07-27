@@ -6,7 +6,6 @@
     <title>DND Карта</title>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-storage-compat.js"></script>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
@@ -46,12 +45,14 @@
             background: #2c3e50; border: 2px solid #444; color: white;
             padding: 4px 12px; border-radius: 16px; font-size: 13px;
             cursor: pointer; touch-action: manipulation; min-height: 32px; transition: 0.2s;
+            white-space: nowrap;
         }
         .top-bar button:hover { border-color: #f1c40f; }
         .top-bar button:active { transform: scale(0.95); }
         .top-bar button.active { border-color: #f1c40f; background: #34495e; }
         .top-bar button.gm-btn.active { background: #f1c40f; color: #1e1e1e; border-color: #f1c40f; }
         .top-bar button.danger { background: #c0392b; border-color: #c0392b; }
+        .top-bar button.tool-active { background: #2980b9; border-color: #2980b9; }
         .top-bar button[data-map] { font-size: 12px; padding: 2px 10px; min-height: 28px; }
         .top-bar button[data-map].active { border-color: #f1c40f; background: #34495e; }
         .top-bar button[data-map].disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
@@ -80,6 +81,24 @@
         .map-image {
             width: 100%; height: 100%; object-fit: contain; display: block;
             background: #1a1a1a; pointer-events: none;
+        }
+
+        /* ===== СЛОЙ ДЛЯ РИСОВАНИЯ ===== */
+        .draw-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 6;
+        }
+        .draw-layer canvas {
+            width: 100%; height: 100%;
+            display: block;
+            pointer-events: none;
+        }
+        .draw-layer.active {
+            pointer-events: all;
+            cursor: crosshair;
         }
 
         .grid-container {
@@ -135,18 +154,26 @@
         .token:active { cursor: grabbing; filter: brightness(1.3); z-index: 20; }
         .token.snap { transition: left 0.1s ease, top 0.1s ease; }
 
-        /* ===== ЛАЗЕРНАЯ УКАЗКА ===== */
+        /* ===== ЛАЗЕРНАЯ УКАЗКА (В РЕАЛЬНОМ ВРЕМЕНИ) ===== */
+        .pointer-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            overflow: hidden;
+        }
         .pointer {
             position: absolute;
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%);
             transform: translate(-50%, -50%);
             pointer-events: none;
-            z-index: 100;
             animation: pulse-pointer 1.5s ease-in-out infinite;
             box-shadow: 0 0 30px 10px currentColor;
+            transition: left 0.05s ease, top 0.05s ease;
+            will-change: left, top;
         }
         .pointer .label {
             position: absolute;
@@ -256,8 +283,8 @@
 
         @media (max-width: 600px) {
             h1 { font-size: 16px; }
-            .top-bar button { font-size: 11px; padding: 2px 8px; min-height: 26px; }
-            .top-bar button[data-map] { font-size: 10px; padding: 2px 6px; min-height: 24px; }
+            .top-bar button { font-size: 10px; padding: 2px 6px; min-height: 24px; }
+            .top-bar button[data-map] { font-size: 9px; padding: 1px 5px; min-height: 20px; }
             .zoom-controls button { font-size: 12px; padding: 2px 8px; min-height: 28px; }
             .gm-controls button { font-size: 12px; padding: 2px 8px; min-height: 28px; }
             .gm-controls input[type="number"] { width: 40px; font-size: 12px; }
@@ -292,6 +319,9 @@
         <button onclick="toggleGrid()" class="active" id="gridToggleBtn">📐</button>
         <button onclick="toggleSnap()" class="gm-only active" id="snapToggleBtn">🎯</button>
         <button onclick="uploadAvatar()">🖼️ Аватар</button>
+        <button onclick="togglePointer()" id="pointerBtn">🔦 Указка</button>
+        <button onclick="toggleDraw()" id="drawBtn" class="gm-only">✏️ Рисовать</button>
+        <button onclick="clearDraw()" id="clearDrawBtn" class="gm-only" style="background:#c0392b; border-color:#c0392b;">🧹 Очистить</button>
     </div>
 
     <div class="top-bar gm-only-flex" id="mapSelector" style="border-bottom: none; background: #1a1a1a; gap: 4px; padding: 4px 10px;">
@@ -306,11 +336,14 @@
         <div class="map-viewport" id="mapViewport">
             <div class="map-content">
                 <img class="map-image" id="mapImage" src="images/forest.jpg" alt="Карта">
+                <div class="draw-layer" id="drawLayer">
+                    <canvas id="drawCanvas"></canvas>
+                </div>
                 <div class="grid-container" id="gridContainer">
                     <div class="grid-overlay" id="gridOverlay"></div>
                 </div>
                 <div class="tokens-layer" id="tokensLayer"></div>
-                <div id="pointersContainer"></div>
+                <div class="pointer-container" id="pointersContainer"></div>
             </div>
         </div>
     </div>
@@ -378,7 +411,6 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const storage = firebase.storage();
 
         // ==================== НИК И GM ====================
         const GM_PASSWORD = '123';
@@ -387,10 +419,203 @@
         const randomId = 'Player_' + Math.random().toString(36).substring(2, 6);
         let displayName = playerName || randomId;
 
-        // Цвет для указки
         const pointerColors = ['#ff4444', '#44ff44', '#4444ff', '#ffaa00', '#ff44ff', '#44ffff', '#ff8800', '#aa44ff'];
         let myPointerColor = pointerColors[Math.floor(Math.random() * pointerColors.length)];
 
+        // ===== УКАЗКА (РЕАЛЬНОЕ ВРЕМЯ) =====
+        let pointerEnabled = false;
+        let isPointerActive = false;
+        const pointerBtn = document.getElementById('pointerBtn');
+        const pointersContainer = document.getElementById('pointersContainer');
+        let myPointerRef = null;
+        let pointerUpdateTimer = null;
+
+        function togglePointer() {
+            pointerEnabled = !pointerEnabled;
+            pointerBtn.classList.toggle('tool-active', pointerEnabled);
+            document.getElementById('log').textContent = pointerEnabled ? '🔦 Указка включена' : '🔦 Указка выключена';
+            if (!pointerEnabled && myPointerRef) {
+                myPointerRef.remove();
+                myPointerRef = null;
+            }
+        }
+
+        // Слушаем указки других игроков
+        const pointersRef = db.ref('pointers');
+        pointersRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            // Очищаем все указки
+            pointersContainer.innerHTML = '';
+            if (!data) return;
+            Object.keys(data).forEach(key => {
+                const p = data[key];
+                // Показываем указки всех игроков (включая свою)
+                const div = document.createElement('div');
+                div.className = 'pointer';
+                div.style.color = p.color || '#ff4444';
+                div.style.background = `radial-gradient(circle, ${p.color || '#ff4444'} 0%, transparent 70%)`;
+                div.style.left = p.x + '%';
+                div.style.top = p.y + '%';
+                if (p.name) {
+                    const label = document.createElement('div');
+                    label.className = 'label';
+                    label.textContent = p.name;
+                    div.appendChild(label);
+                }
+                pointersContainer.appendChild(div);
+            });
+        });
+
+        // Функция отправки позиции указки
+        function sendPointerPosition(x, y) {
+            if (!pointerEnabled) return;
+            if (!myPointerRef) {
+                myPointerRef = pointersRef.push({
+                    x: x,
+                    y: y,
+                    name: displayName,
+                    color: myPointerColor
+                });
+            } else {
+                myPointerRef.update({
+                    x: x,
+                    y: y,
+                    name: displayName,
+                    color: myPointerColor
+                });
+            }
+        }
+
+        // ===== ОТСЛЕЖИВАНИЕ МЫШИ =====
+        wrapper.addEventListener('mousemove', (e) => {
+            if (!pointerEnabled) return;
+            if (e.target.closest('.token')) return;
+            const rect = wrapper.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width * 100;
+            const y = (e.clientY - rect.top) / rect.height * 100;
+            sendPointerPosition(x, y);
+        });
+
+        // ===== ОТСЛЕЖИВАНИЕ ПАЛЬЦА (ТОЧНОЕ) =====
+        wrapper.addEventListener('touchmove', (e) => {
+            if (!pointerEnabled) return;
+            if (e.target.closest('.token')) return;
+            if (e.touches.length === 1) {
+                const rect = wrapper.getBoundingClientRect();
+                const x = (e.touches[0].clientX - rect.left) / rect.width * 100;
+                const y = (e.touches[0].clientY - rect.top) / rect.height * 100;
+                sendPointerPosition(x, y);
+            }
+        }, { passive: true });
+
+        // Убираем указку, если палец ушел с карты
+        wrapper.addEventListener('mouseleave', () => {
+            if (myPointerRef) {
+                myPointerRef.remove();
+                myPointerRef = null;
+            }
+        });
+
+        wrapper.addEventListener('touchend', () => {
+            if (myPointerRef) {
+                myPointerRef.remove();
+                myPointerRef = null;
+            }
+        }, { passive: true });
+
+        // ===== РИСОВАНИЕ =====
+        let drawEnabled = false;
+        let isDrawing = false;
+        const drawBtn = document.getElementById('drawBtn');
+        const drawLayer = document.getElementById('drawLayer');
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        let lastDrawX, lastDrawY;
+
+        function initCanvas() {
+            const rect = drawLayer.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            ctx.scale(dpr, dpr);
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+        setTimeout(initCanvas, 100);
+        window.addEventListener('resize', initCanvas);
+
+        function toggleDraw() {
+            if (!isGM) return;
+            drawEnabled = !drawEnabled;
+            drawLayer.classList.toggle('active', drawEnabled);
+            drawBtn.classList.toggle('tool-active', drawEnabled);
+            document.getElementById('log').textContent = drawEnabled ? '✏️ Рисование включено' : '✏️ Рисование выключено';
+        }
+
+        function clearDraw() {
+            if (!isGM) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('log').textContent = '🧹 Рисунок очищен';
+        }
+
+        // События рисования (мышь)
+        drawLayer.addEventListener('mousedown', (e) => {
+            if (!drawEnabled || !isGM) return;
+            isDrawing = true;
+            const rect = drawLayer.getBoundingClientRect();
+            lastDrawX = (e.clientX - rect.left);
+            lastDrawY = (e.clientY - rect.top);
+        });
+
+        drawLayer.addEventListener('mousemove', (e) => {
+            if (!isDrawing || !drawEnabled || !isGM) return;
+            const rect = drawLayer.getBoundingClientRect();
+            const x = (e.clientX - rect.left);
+            const y = (e.clientY - rect.top);
+            ctx.beginPath();
+            ctx.moveTo(lastDrawX, lastDrawY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            lastDrawX = x;
+            lastDrawY = y;
+        });
+
+        drawLayer.addEventListener('mouseup', () => { isDrawing = false; });
+        drawLayer.addEventListener('mouseleave', () => { isDrawing = false; });
+
+        // Touch события для рисования
+        drawLayer.addEventListener('touchstart', (e) => {
+            if (!drawEnabled || !isGM) return;
+            e.preventDefault();
+            isDrawing = true;
+            const rect = drawLayer.getBoundingClientRect();
+            const touch = e.touches[0];
+            lastDrawX = (touch.clientX - rect.left);
+            lastDrawY = (touch.clientY - rect.top);
+        }, { passive: false });
+
+        drawLayer.addEventListener('touchmove', (e) => {
+            if (!isDrawing || !drawEnabled || !isGM) return;
+            e.preventDefault();
+            const rect = drawLayer.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = (touch.clientX - rect.left);
+            const y = (touch.clientY - rect.top);
+            ctx.beginPath();
+            ctx.moveTo(lastDrawX, lastDrawY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            lastDrawX = x;
+            lastDrawY = y;
+        }, { passive: false });
+
+        drawLayer.addEventListener('touchend', () => { isDrawing = false; });
+
+        // ==================== КАРТА ====================
         if (!playerName) {
             document.getElementById('nicknameContainer').classList.remove('hidden');
             document.getElementById('log').textContent = '👋 Введи свой ник!';
@@ -475,59 +700,46 @@
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
-            input.onchange = async function(e) {
+            input.onchange = function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                try {
-                    // Сжимаем и конвертируем в base64
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const img = new Image();
-                        img.onload = function() {
-                            const canvas = document.createElement('canvas');
-                            const size = Math.min(img.width, img.height, 200);
-                            canvas.width = size;
-                            canvas.height = size;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, (img.width - size)/2, (img.height - size)/2, size, size, 0, 0, size, size);
-                            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                            localStorage.setItem('dnd_avatar', dataUrl);
-                            document.getElementById('log').textContent = '🖼️ Аватар загружен!';
-                            // Обновляем фигурку игрока, если она есть
-                            updatePlayerAvatar(dataUrl);
-                        };
-                        img.src = event.target.result;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const size = Math.min(img.width, img.height, 200);
+                        canvas.width = size;
+                        canvas.height = size;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, (img.width - size)/2, (img.height - size)/2, size, size, 0, 0, size, size);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                        localStorage.setItem('dnd_avatar', dataUrl);
+                        document.getElementById('log').textContent = '🖼️ Аватар загружен! Теперь создай нового персонажа, или обнови аватар у существующего через кнопку рядом.';
                     };
-                    reader.readAsDataURL(file);
-                } catch (error) {
-                    console.error('Ошибка загрузки аватара:', error);
-                    alert('❌ Не удалось загрузить аватар!');
-                }
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
             };
             input.click();
         }
 
         function updatePlayerAvatar(dataUrl) {
-            // Ищем фигурку текущего игрока по нику
-            Object.values(tokens).forEach(token => {
-                if (token.player === displayName || token.icon === displayName) {
+            // Ищем первую фигурку этого игрока и обновляем
+            for (let id in tokens) {
+                const token = tokens[id];
+                if (token.player === displayName) {
                     token.avatar = dataUrl;
-                    // Обновляем отображение
-                    const el = tokensLayer.querySelector(`[data-id="${token.id}"]`);
+                    const el = tokensLayer.querySelector(`[data-id="${id}"]`);
                     if (el) {
                         el.innerHTML = `<img src="${dataUrl}" alt="">`;
                     }
-                    // Сохраняем через debounce
                     debouncedSave();
+                    document.getElementById('log').textContent = '🔄 Аватар обновлён!';
+                    return;
                 }
-            });
-        }
-
-        function getTokenDisplay(token) {
-            if (token.avatar) {
-                return `<img src="${token.avatar}" alt="">`;
             }
-            return `<span class="emoji">${token.icon}</span>`;
+            document.getElementById('log').textContent = '⚠️ Сначала создай персонажа через "➕ Добавить"';
         }
 
         // ==================== КАРТА: ZOOM / PAN ====================
@@ -552,93 +764,14 @@
         function zoomOut() { scale = Math.max(0.2, scale - 0.15); updateTransform(); }
         function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
-        // ===== ЛАЗЕРНАЯ УКАЗКА =====
-        const pointersRef = db.ref('pointers');
-        const pointersContainer = document.getElementById('pointersContainer');
-        let myPointerRef = null;
-        let pointerTimeout = null;
-
-        // Слушаем указки других игроков
-        pointersRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            // Очищаем все указки
-            pointersContainer.innerHTML = '';
-            if (!data) return;
-            Object.keys(data).forEach(key => {
-                const p = data[key];
-                // Показываем указки всех игроков (включая свою)
-                const div = document.createElement('div');
-                div.className = 'pointer';
-                div.style.color = p.color || '#ff4444';
-                div.style.left = p.x + '%';
-                div.style.top = p.y + '%';
-                div.style.background = `radial-gradient(circle, ${p.color || '#ff4444'} 0%, transparent 70%)`;
-                if (p.name) {
-                    const label = document.createElement('div');
-                    label.className = 'label';
-                    label.textContent = p.name;
-                    div.appendChild(label);
-                }
-                pointersContainer.appendChild(div);
-                // Авто-удаление через 5 секунд
-                setTimeout(() => {
-                    if (div.parentNode) div.remove();
-                }, 5000);
-            });
-        });
-
-        // Клик по карте для указки
-        wrapper.addEventListener('click', (e) => {
-            if (e.target.closest('.token')) return;
-            const rect = wrapper.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width * 100;
-            const y = (e.clientY - rect.top) / rect.height * 100;
-            sendPointer(x, y);
-        });
-
-        wrapper.addEventListener('touchstart', (e) => {
-            if (e.target.closest('.token')) return;
-            if (e.touches.length === 1) {
-                const rect = wrapper.getBoundingClientRect();
-                const x = (e.touches[0].clientX - rect.left) / rect.width * 100;
-                const y = (e.touches[0].clientY - rect.top) / rect.height * 100;
-                sendPointer(x, y);
-            }
-        }, { passive: true });
-
-        function sendPointer(x, y) {
-            // Удаляем старую указку
-            if (myPointerRef) {
-                myPointerRef.remove();
-            }
-            myPointerRef = pointersRef.push({
-                x: x,
-                y: y,
-                name: displayName,
-                color: myPointerColor,
-                timestamp: Date.now()
-            });
-            // Авто-удаление через 5 секунд
-            clearTimeout(pointerTimeout);
-            pointerTimeout = setTimeout(() => {
-                if (myPointerRef) {
-                    myPointerRef.remove();
-                    myPointerRef = null;
-                }
-            }, 5000);
-        }
-
         // ==================== DEBOUNCED SAVE ====================
         let saveTimer = null;
         let isSaving = false;
 
         function debouncedSave() {
-            // Сохраняем в localStorage мгновенно
             try {
                 localStorage.setItem('dnd_tokens_backup', JSON.stringify(tokens));
             } catch (e) {}
-
-            // Откладываем сохранение в Firebase
             if (saveTimer) {
                 clearTimeout(saveTimer);
             }
@@ -647,7 +780,6 @@
                     isSaving = true;
                     tokensRef.set(tokens).then(() => {
                         isSaving = false;
-                        console.log('💾 Сохранено в Firebase');
                     }).catch(() => {
                         isSaving = false;
                     });
@@ -752,13 +884,11 @@
             document.querySelectorAll('.token').forEach(t => {
                 t.style.width = size + '%';
                 t.style.height = size + '%';
-                const fontSize = Math.max(6, Math.min(30, size * 0.9)) + 'px';
-                t.style.fontSize = fontSize;
+                t.style.fontSize = Math.max(6, Math.min(30, size * 0.9)) + 'px';
                 t.style.minWidth = '10px';
                 t.style.minHeight = '10px';
                 t.style.maxWidth = '70px';
                 t.style.maxHeight = '70px';
-                // Для аватаров: если есть img, то размер уже задан через width/height
             });
         }
 
@@ -799,7 +929,6 @@
             renderTokens();
         }
 
-        // Загружаем данные из localStorage при старте
         function loadFromLocalStorage() {
             try {
                 const data = localStorage.getItem('dnd_tokens_backup');
@@ -807,7 +936,6 @@
                     const parsed = JSON.parse(data);
                     if (parsed && Object.keys(parsed).length > 0) {
                         tokens = parsed;
-                        // Вычисляем nextId
                         let maxId = 0;
                         Object.keys(tokens).forEach(id => {
                             const num = parseInt(id);
@@ -823,7 +951,6 @@
             return false;
         }
 
-        // Загрузка из Firebase (с проверкой localStorage)
         tokensRef.on('value', (snapshot) => {
             if (isLocalUpdate) return;
             const data = snapshot.val();
@@ -836,7 +963,6 @@
                 });
                 nextId = maxId + 1;
             } else {
-                // Если в Firebase пусто, но есть в localStorage — используем localStorage
                 if (!loadFromLocalStorage()) {
                     tokens = {};
                     nextId = 1;
@@ -874,7 +1000,6 @@
                 el.addEventListener('touchstart', (e) => startDrag(e, id), { passive: false });
                 tokensLayer.appendChild(el);
             }
-            // Отображаем аватар или эмодзи
             if (token.avatar) {
                 el.innerHTML = `<img src="${token.avatar}" alt="">`;
             } else {
@@ -1013,7 +1138,6 @@
         function endDrag(e) {
             if (draggedToken !== null && tokens[draggedToken]) {
                 const token = tokens[draggedToken];
-                // Сохраняем через debounce
                 debouncedSave();
                 draggedToken = null;
             }
@@ -1124,7 +1248,6 @@
         });
 
         // ==================== СТАРТ ====================
-        // Загружаем из localStorage при старте
         loadFromLocalStorage();
         updateTransform();
         if (!playerName) document.getElementById('log').textContent = '👋 Введи свой ник!';
