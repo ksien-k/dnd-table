@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DND Карта</title>
+    
+    <!-- ===== ВАЖНО: ПОДКЛЮЧАЕМ ВСЕ МОДУЛИ FIREBASE ===== -->
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-storage-compat.js"></script>
+    
     <style>
+        /* ===== ВЕСЬ CSS ТОТ ЖЕ, ЧТО И В ПРОШЛОМ КОДЕ ===== */
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
             font-family: Arial, sans-serif; background: #1a1a1a; color: #eee;
@@ -83,7 +88,6 @@
             background: #1a1a1a; pointer-events: none;
         }
 
-        /* ===== СЛОЙ ДЛЯ РИСОВАНИЯ ===== */
         .draw-layer {
             position: absolute;
             top: 0; left: 0;
@@ -154,7 +158,6 @@
         .token:active { cursor: grabbing; filter: brightness(1.3); z-index: 20; }
         .token.snap { transition: left 0.1s ease, top 0.1s ease; }
 
-        /* ===== ЛАЗЕРНАЯ УКАЗКА (В РЕАЛЬНОМ ВРЕМЕНИ) ===== */
         .pointer-container {
             position: absolute;
             top: 0; left: 0;
@@ -298,6 +301,7 @@
     </style>
 </head>
 <body>
+    <!-- ===== ВЕСЬ HTML ТОТ ЖЕ ===== -->
     <h1>⚔️ Поле боя</h1>
 
     <div class="nickname-container" id="nicknameContainer">
@@ -422,13 +426,11 @@
         const pointerColors = ['#ff4444', '#44ff44', '#4444ff', '#ffaa00', '#ff44ff', '#44ffff', '#ff8800', '#aa44ff'];
         let myPointerColor = pointerColors[Math.floor(Math.random() * pointerColors.length)];
 
-        // ===== УКАЗКА (РЕАЛЬНОЕ ВРЕМЯ) =====
+        // ===== УКАЗКА =====
         let pointerEnabled = false;
-        let isPointerActive = false;
         const pointerBtn = document.getElementById('pointerBtn');
         const pointersContainer = document.getElementById('pointersContainer');
         let myPointerRef = null;
-        let pointerUpdateTimer = null;
 
         function togglePointer() {
             pointerEnabled = !pointerEnabled;
@@ -440,16 +442,13 @@
             }
         }
 
-        // Слушаем указки других игроков
         const pointersRef = db.ref('pointers');
         pointersRef.on('value', (snapshot) => {
             const data = snapshot.val();
-            // Очищаем все указки
             pointersContainer.innerHTML = '';
             if (!data) return;
             Object.keys(data).forEach(key => {
                 const p = data[key];
-                // Показываем указки всех игроков (включая свою)
                 const div = document.createElement('div');
                 div.className = 'pointer';
                 div.style.color = p.color || '#ff4444';
@@ -466,62 +465,35 @@
             });
         });
 
-        // Функция отправки позиции указки
         function sendPointerPosition(x, y) {
             if (!pointerEnabled) return;
             if (!myPointerRef) {
                 myPointerRef = pointersRef.push({
-                    x: x,
-                    y: y,
-                    name: displayName,
-                    color: myPointerColor
+                    x: x, y: y, name: displayName, color: myPointerColor
                 });
             } else {
-                myPointerRef.update({
-                    x: x,
-                    y: y,
-                    name: displayName,
-                    color: myPointerColor
-                });
+                myPointerRef.update({ x: x, y: y, name: displayName, color: myPointerColor });
             }
         }
 
-        // ===== ОТСЛЕЖИВАНИЕ МЫШИ =====
         wrapper.addEventListener('mousemove', (e) => {
             if (!pointerEnabled) return;
             if (e.target.closest('.token')) return;
             const rect = wrapper.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width * 100;
-            const y = (e.clientY - rect.top) / rect.height * 100;
-            sendPointerPosition(x, y);
+            sendPointerPosition((e.clientX - rect.left) / rect.width * 100, (e.clientY - rect.top) / rect.height * 100);
         });
 
-        // ===== ОТСЛЕЖИВАНИЕ ПАЛЬЦА (ТОЧНОЕ) =====
         wrapper.addEventListener('touchmove', (e) => {
             if (!pointerEnabled) return;
             if (e.target.closest('.token')) return;
             if (e.touches.length === 1) {
                 const rect = wrapper.getBoundingClientRect();
-                const x = (e.touches[0].clientX - rect.left) / rect.width * 100;
-                const y = (e.touches[0].clientY - rect.top) / rect.height * 100;
-                sendPointerPosition(x, y);
+                sendPointerPosition((e.touches[0].clientX - rect.left) / rect.width * 100, (e.touches[0].clientY - rect.top) / rect.height * 100);
             }
         }, { passive: true });
 
-        // Убираем указку, если палец ушел с карты
-        wrapper.addEventListener('mouseleave', () => {
-            if (myPointerRef) {
-                myPointerRef.remove();
-                myPointerRef = null;
-            }
-        });
-
-        wrapper.addEventListener('touchend', () => {
-            if (myPointerRef) {
-                myPointerRef.remove();
-                myPointerRef = null;
-            }
-        }, { passive: true });
+        wrapper.addEventListener('mouseleave', () => { if (myPointerRef) { myPointerRef.remove(); myPointerRef = null; } });
+        wrapper.addEventListener('touchend', () => { if (myPointerRef) { myPointerRef.remove(); myPointerRef = null; } }, { passive: true });
 
         // ===== РИСОВАНИЕ =====
         let drawEnabled = false;
@@ -562,7 +534,6 @@
             document.getElementById('log').textContent = '🧹 Рисунок очищен';
         }
 
-        // События рисования (мышь)
         drawLayer.addEventListener('mousedown', (e) => {
             if (!drawEnabled || !isGM) return;
             isDrawing = true;
@@ -587,7 +558,6 @@
         drawLayer.addEventListener('mouseup', () => { isDrawing = false; });
         drawLayer.addEventListener('mouseleave', () => { isDrawing = false; });
 
-        // Touch события для рисования
         drawLayer.addEventListener('touchstart', (e) => {
             if (!drawEnabled || !isGM) return;
             e.preventDefault();
@@ -615,7 +585,7 @@
 
         drawLayer.addEventListener('touchend', () => { isDrawing = false; });
 
-        // ==================== КАРТА ====================
+        // ==================== НИКНЕЙМ ====================
         if (!playerName) {
             document.getElementById('nicknameContainer').classList.remove('hidden');
             document.getElementById('log').textContent = '👋 Введи свой ник!';
@@ -724,24 +694,6 @@
             input.click();
         }
 
-        function updatePlayerAvatar(dataUrl) {
-            // Ищем первую фигурку этого игрока и обновляем
-            for (let id in tokens) {
-                const token = tokens[id];
-                if (token.player === displayName) {
-                    token.avatar = dataUrl;
-                    const el = tokensLayer.querySelector(`[data-id="${id}"]`);
-                    if (el) {
-                        el.innerHTML = `<img src="${dataUrl}" alt="">`;
-                    }
-                    debouncedSave();
-                    document.getElementById('log').textContent = '🔄 Аватар обновлён!';
-                    return;
-                }
-            }
-            document.getElementById('log').textContent = '⚠️ Сначала создай персонажа через "➕ Добавить"';
-        }
-
         // ==================== КАРТА: ZOOM / PAN ====================
         let scale = 1, panX = 0, panY = 0;
         let isDraggingMap = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
@@ -778,11 +730,7 @@
             saveTimer = setTimeout(() => {
                 if (!isSaving && Object.keys(tokens).length > 0) {
                     isSaving = true;
-                    tokensRef.set(tokens).then(() => {
-                        isSaving = false;
-                    }).catch(() => {
-                        isSaving = false;
-                    });
+                    tokensRef.set(tokens).then(() => { isSaving = false; }).catch(() => { isSaving = false; });
                 }
                 saveTimer = null;
             }, 2000);
@@ -1235,7 +1183,8 @@
             }, 200);
         }
 
-        db.ref('rolls').limitToLast(1).on('child_added', (snap) => {
+        const rollsRef = db.ref('rolls');
+        rollsRef.limitToLast(1).on('child_added', (snap) => {
             const data = snap.val();
             if (data.player === displayName) return;
             addLogEntry(data.player, data.sides, data.result);
