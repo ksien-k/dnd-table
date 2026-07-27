@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DND Карта</title>
     
-    <!-- ===== ВАЖНО: ПОДКЛЮЧАЕМ ВСЕ МОДУЛИ FIREBASE ===== -->
+    <!-- ===== FIREBASE ===== -->
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-storage-compat.js"></script>
     
     <style>
-        /* ===== ВЕСЬ CSS ТОТ ЖЕ, ЧТО И В ПРОШЛОМ КОДЕ ===== */
+        /* ===== ВЕСЬ CSS (БЕЗ ИЗМЕНЕНИЙ) ===== */
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
             font-family: Arial, sans-serif; background: #1a1a1a; color: #eee;
@@ -301,7 +300,6 @@
     </style>
 </head>
 <body>
-    <!-- ===== ВЕСЬ HTML ТОТ ЖЕ ===== -->
     <h1>⚔️ Поле боя</h1>
 
     <div class="nickname-container" id="nicknameContainer">
@@ -403,7 +401,14 @@
     </div>
 
     <script>
-        // ==================== FIREBASE ====================
+        // ============================================================
+        // 1. ВСЕ КОНСТАНТЫ И ПЕРЕМЕННЫЕ ОБЪЯВЛЯЕМ В САМОМ НАЧАЛЕ
+        // ============================================================
+        const MAX_LOG = 15;
+
+        // ============================================================
+        // 2. FIREBASE
+        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyCfb0M7LS3nzPcabFuvekS815GvH1fUK_Q",
             authDomain: "dnd-rubezhata.firebaseapp.com",
@@ -416,7 +421,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // ==================== НИК И GM ====================
+        // ============================================================
+        // 3. НИК И GM
+        // ============================================================
         const GM_PASSWORD = '123';
         let isGM = false;
         let playerName = localStorage.getItem('dnd_player_name') || '';
@@ -426,175 +433,94 @@
         const pointerColors = ['#ff4444', '#44ff44', '#4444ff', '#ffaa00', '#ff44ff', '#44ffff', '#ff8800', '#aa44ff'];
         let myPointerColor = pointerColors[Math.floor(Math.random() * pointerColors.length)];
 
-        // ===== УКАЗКА =====
-        let pointerEnabled = false;
-        const pointerBtn = document.getElementById('pointerBtn');
+        // ============================================================
+        // 4. DOM-ЭЛЕМЕНТЫ (ВСЕ ДО ИХ ИСПОЛЬЗОВАНИЯ)
+        // ============================================================
+        const wrapper = document.getElementById('mapWrapper');
+        const viewport = document.getElementById('mapViewport');
+        const mapImage = document.getElementById('mapImage');
+        const zoomLabel = document.getElementById('zoomLabel');
         const pointersContainer = document.getElementById('pointersContainer');
-        let myPointerRef = null;
-
-        function togglePointer() {
-            pointerEnabled = !pointerEnabled;
-            pointerBtn.classList.toggle('tool-active', pointerEnabled);
-            document.getElementById('log').textContent = pointerEnabled ? '🔦 Указка включена' : '🔦 Указка выключена';
-            if (!pointerEnabled && myPointerRef) {
-                myPointerRef.remove();
-                myPointerRef = null;
-            }
-        }
-
-        const pointersRef = db.ref('pointers');
-        pointersRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            pointersContainer.innerHTML = '';
-            if (!data) return;
-            Object.keys(data).forEach(key => {
-                const p = data[key];
-                const div = document.createElement('div');
-                div.className = 'pointer';
-                div.style.color = p.color || '#ff4444';
-                div.style.background = `radial-gradient(circle, ${p.color || '#ff4444'} 0%, transparent 70%)`;
-                div.style.left = p.x + '%';
-                div.style.top = p.y + '%';
-                if (p.name) {
-                    const label = document.createElement('div');
-                    label.className = 'label';
-                    label.textContent = p.name;
-                    div.appendChild(label);
-                }
-                pointersContainer.appendChild(div);
-            });
-        });
-
-        function sendPointerPosition(x, y) {
-            if (!pointerEnabled) return;
-            if (!myPointerRef) {
-                myPointerRef = pointersRef.push({
-                    x: x, y: y, name: displayName, color: myPointerColor
-                });
-            } else {
-                myPointerRef.update({ x: x, y: y, name: displayName, color: myPointerColor });
-            }
-        }
-
-        wrapper.addEventListener('mousemove', (e) => {
-            if (!pointerEnabled) return;
-            if (e.target.closest('.token')) return;
-            const rect = wrapper.getBoundingClientRect();
-            sendPointerPosition((e.clientX - rect.left) / rect.width * 100, (e.clientY - rect.top) / rect.height * 100);
-        });
-
-        wrapper.addEventListener('touchmove', (e) => {
-            if (!pointerEnabled) return;
-            if (e.target.closest('.token')) return;
-            if (e.touches.length === 1) {
-                const rect = wrapper.getBoundingClientRect();
-                sendPointerPosition((e.touches[0].clientX - rect.left) / rect.width * 100, (e.touches[0].clientY - rect.top) / rect.height * 100);
-            }
-        }, { passive: true });
-
-        wrapper.addEventListener('mouseleave', () => { if (myPointerRef) { myPointerRef.remove(); myPointerRef = null; } });
-        wrapper.addEventListener('touchend', () => { if (myPointerRef) { myPointerRef.remove(); myPointerRef = null; } }, { passive: true });
-
-        // ===== РИСОВАНИЕ =====
-        let drawEnabled = false;
-        let isDrawing = false;
+        const pointerBtn = document.getElementById('pointerBtn');
         const drawBtn = document.getElementById('drawBtn');
         const drawLayer = document.getElementById('drawLayer');
         const canvas = document.getElementById('drawCanvas');
         const ctx = canvas.getContext('2d');
+        const gridOverlay = document.getElementById('gridOverlay');
+        const gridContainer = document.getElementById('gridContainer');
+        const gridColsInput = document.getElementById('gridColsInput');
+        const gridRowsInput = document.getElementById('gridRowsInput');
+        const tokenSizeSlider = document.getElementById('tokenSizeSlider');
+        const tokenSizeLabel = document.getElementById('tokenSizeLabel');
+        const tokensLayer = document.getElementById('tokensLayer');
+        const diceDisplay = document.getElementById('diceDisplay');
+        const logEl = document.getElementById('log');
+        const rollLogEntries = document.getElementById('rollLogEntries');
+
+        // ============================================================
+        // 5. ПЕРЕМЕННЫЕ СОСТОЯНИЯ
+        // ============================================================
+        let scale = 1, panX = 0, panY = 0;
+        let isDraggingMap = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
+        let snapEnabled = true;
+        let gridVisible = true;
+        let gridCols = 10, gridRows = 6;
+        let tokenSizePercent = 55;
+        let pointerEnabled = false;
+        let myPointerRef = null;
+        let drawEnabled = false;
+        let isDrawing = false;
         let lastDrawX, lastDrawY;
+        let tokens = {};
+        let nextId = 1;
+        let draggedToken = null;
+        let dragOffsetX = 0, dragOffsetY = 0;
+        let isLocalUpdate = false;
+        let isFirstLoad = true;
+        let saveTimer = null;
+        let isSaving = false;
 
-        function initCanvas() {
-            const rect = drawLayer.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            canvas.style.width = rect.width + 'px';
-            canvas.style.height = rect.height + 'px';
-            ctx.scale(dpr, dpr);
-            ctx.strokeStyle = '#ff4444';
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-        }
-        setTimeout(initCanvas, 100);
-        window.addEventListener('resize', initCanvas);
+        const tokensRef = db.ref('tokens');
+        const pointersRef = db.ref('pointers');
+        const snapRef = db.ref('snapEnabled');
+        const gridSizeRef = db.ref('gridSize');
+        const mapRef = db.ref('currentMap');
+        const rollsRef = db.ref('rolls');
 
-        function toggleDraw() {
-            if (!isGM) return;
-            drawEnabled = !drawEnabled;
-            drawLayer.classList.toggle('active', drawEnabled);
-            drawBtn.classList.toggle('tool-active', drawEnabled);
-            document.getElementById('log').textContent = drawEnabled ? '✏️ Рисование включено' : '✏️ Рисование выключено';
-        }
+        // ============================================================
+        // 6. ВСЕ ФУНКЦИИ (В ПРАВИЛЬНОМ ПОРЯДКЕ)
+        // ============================================================
 
-        function clearDraw() {
-            if (!isGM) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            document.getElementById('log').textContent = '🧹 Рисунок очищен';
-        }
-
-        drawLayer.addEventListener('mousedown', (e) => {
-            if (!drawEnabled || !isGM) return;
-            isDrawing = true;
-            const rect = drawLayer.getBoundingClientRect();
-            lastDrawX = (e.clientX - rect.left);
-            lastDrawY = (e.clientY - rect.top);
-        });
-
-        drawLayer.addEventListener('mousemove', (e) => {
-            if (!isDrawing || !drawEnabled || !isGM) return;
-            const rect = drawLayer.getBoundingClientRect();
-            const x = (e.clientX - rect.left);
-            const y = (e.clientY - rect.top);
-            ctx.beginPath();
-            ctx.moveTo(lastDrawX, lastDrawY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            lastDrawX = x;
-            lastDrawY = y;
-        });
-
-        drawLayer.addEventListener('mouseup', () => { isDrawing = false; });
-        drawLayer.addEventListener('mouseleave', () => { isDrawing = false; });
-
-        drawLayer.addEventListener('touchstart', (e) => {
-            if (!drawEnabled || !isGM) return;
-            e.preventDefault();
-            isDrawing = true;
-            const rect = drawLayer.getBoundingClientRect();
-            const touch = e.touches[0];
-            lastDrawX = (touch.clientX - rect.left);
-            lastDrawY = (touch.clientY - rect.top);
-        }, { passive: false });
-
-        drawLayer.addEventListener('touchmove', (e) => {
-            if (!isDrawing || !drawEnabled || !isGM) return;
-            e.preventDefault();
-            const rect = drawLayer.getBoundingClientRect();
-            const touch = e.touches[0];
-            const x = (touch.clientX - rect.left);
-            const y = (touch.clientY - rect.top);
-            ctx.beginPath();
-            ctx.moveTo(lastDrawX, lastDrawY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            lastDrawX = x;
-            lastDrawY = y;
-        }, { passive: false });
-
-        drawLayer.addEventListener('touchend', () => { isDrawing = false; });
-
-        // ==================== НИКНЕЙМ ====================
-        if (!playerName) {
-            document.getElementById('nicknameContainer').classList.remove('hidden');
-            document.getElementById('log').textContent = '👋 Введи свой ник!';
-        } else {
-            document.getElementById('nicknameContainer').classList.add('hidden');
-            document.getElementById('playerId').textContent = '👤 ' + displayName;
-            document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
+        // ===== АВАТАРЫ =====
+        function uploadAvatar() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const c = document.createElement('canvas');
+                        const size = Math.min(img.width, img.height, 200);
+                        c.width = size;
+                        c.height = size;
+                        const ctx2 = c.getContext('2d');
+                        ctx2.drawImage(img, (img.width - size)/2, (img.height - size)/2, size, size, 0, 0, size, size);
+                        const dataUrl = c.toDataURL('image/jpeg', 0.8);
+                        localStorage.setItem('dnd_avatar', dataUrl);
+                        logEl.textContent = '🖼️ Аватар загружен! Теперь создай нового персонажа.';
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
         }
 
+        // ===== НИКНЕЙМ =====
         function saveNickname() {
             const input = document.getElementById('nicknameInput');
             const name = input.value.trim();
@@ -604,14 +530,14 @@
             localStorage.setItem('dnd_player_name', name);
             document.getElementById('nicknameContainer').classList.add('hidden');
             document.getElementById('playerId').textContent = '👤 ' + displayName;
-            document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
+            logEl.textContent = '👋 Привет, ' + displayName + '!';
         }
 
         function skipNickname() {
             displayName = randomId;
             document.getElementById('nicknameContainer').classList.add('hidden');
             document.getElementById('playerId').textContent = '👤 ' + displayName;
-            document.getElementById('log').textContent = '👋 Играем без ника';
+            logEl.textContent = '👋 Играем без ника';
         }
 
         function showChangeName() {
@@ -622,7 +548,7 @@
             playerName = trimmed; displayName = trimmed;
             localStorage.setItem('dnd_player_name', trimmed);
             document.getElementById('playerId').textContent = '👤 ' + displayName;
-            document.getElementById('log').textContent = '👋 Привет, ' + displayName + '!';
+            logEl.textContent = '👋 Привет, ' + displayName + '!';
         }
 
         function toggleGM() {
@@ -630,7 +556,7 @@
                 isGM = false;
                 document.getElementById('gmIndicator').textContent = '';
                 document.getElementById('gmToggleBtn').classList.remove('active');
-                document.getElementById('log').textContent = '👑 Режим GM выключен';
+                logEl.textContent = '👑 Режим GM выключен';
                 updateGMMode();
                 return;
             }
@@ -640,7 +566,7 @@
                 document.getElementById('gmIndicator').textContent = '👑 GM';
                 document.getElementById('gmIndicator').style.color = '#f1c40f';
                 document.getElementById('gmToggleBtn').classList.add('active');
-                document.getElementById('log').textContent = '👑 Режим GM включен!';
+                logEl.textContent = '👑 Режим GM включен!';
                 updateGMMode();
             } else if (password !== null) {
                 alert('❌ Неверный пароль!');
@@ -665,43 +591,56 @@
             updateMapButtons();
         }
 
-        // ==================== АВАТАРЫ ====================
-        function uploadAvatar() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const size = Math.min(img.width, img.height, 200);
-                        canvas.width = size;
-                        canvas.height = size;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, (img.width - size)/2, (img.height - size)/2, size, size, 0, 0, size, size);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                        localStorage.setItem('dnd_avatar', dataUrl);
-                        document.getElementById('log').textContent = '🖼️ Аватар загружен! Теперь создай нового персонажа, или обнови аватар у существующего через кнопку рядом.';
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            };
-            input.click();
+        // ===== УКАЗКА =====
+        function togglePointer() {
+            pointerEnabled = !pointerEnabled;
+            pointerBtn.classList.toggle('tool-active', pointerEnabled);
+            logEl.textContent = pointerEnabled ? '🔦 Указка включена' : '🔦 Указка выключена';
+            if (!pointerEnabled && myPointerRef) {
+                myPointerRef.remove();
+                myPointerRef = null;
+            }
         }
 
-        // ==================== КАРТА: ZOOM / PAN ====================
-        let scale = 1, panX = 0, panY = 0;
-        let isDraggingMap = false, startX, startY, startPanX, startPanY, lastTouchDist = 0;
-        const wrapper = document.getElementById('mapWrapper');
-        const viewport = document.getElementById('mapViewport');
-        const mapImage = document.getElementById('mapImage');
-        const zoomLabel = document.getElementById('zoomLabel');
+        function sendPointerPosition(x, y) {
+            if (!pointerEnabled) return;
+            if (!myPointerRef) {
+                myPointerRef = pointersRef.push({ x: x, y: y, name: displayName, color: myPointerColor });
+            } else {
+                myPointerRef.update({ x: x, y: y, name: displayName, color: myPointerColor });
+            }
+        }
 
+        // ===== РИСОВАНИЕ =====
+        function initCanvas() {
+            const rect = drawLayer.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            ctx.scale(dpr, dpr);
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        function toggleDraw() {
+            if (!isGM) return;
+            drawEnabled = !drawEnabled;
+            drawLayer.classList.toggle('active', drawEnabled);
+            drawBtn.classList.toggle('tool-active', drawEnabled);
+            logEl.textContent = drawEnabled ? '✏️ Рисование включено' : '✏️ Рисование выключено';
+        }
+
+        function clearDraw() {
+            if (!isGM) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            logEl.textContent = '🧹 Рисунок очищен';
+        }
+
+        // ===== КАРТА: ZOOM / PAN =====
         function updateTransform() {
             const w = wrapper.clientWidth;
             const h = wrapper.clientHeight;
@@ -716,17 +655,10 @@
         function zoomOut() { scale = Math.max(0.2, scale - 0.15); updateTransform(); }
         function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
-        // ==================== DEBOUNCED SAVE ====================
-        let saveTimer = null;
-        let isSaving = false;
-
+        // ===== DEBOUNCED SAVE =====
         function debouncedSave() {
-            try {
-                localStorage.setItem('dnd_tokens_backup', JSON.stringify(tokens));
-            } catch (e) {}
-            if (saveTimer) {
-                clearTimeout(saveTimer);
-            }
+            try { localStorage.setItem('dnd_tokens_backup', JSON.stringify(tokens)); } catch (e) {}
+            if (saveTimer) clearTimeout(saveTimer);
             saveTimer = setTimeout(() => {
                 if (!isSaving && Object.keys(tokens).length > 0) {
                     isSaving = true;
@@ -736,52 +668,7 @@
             }, 2000);
         }
 
-        // ==================== СЕТКА ====================
-        let snapEnabled = true;
-        let gridVisible = true;
-        let gridCols = 10, gridRows = 6;
-        const gridOverlay = document.getElementById('gridOverlay');
-        const gridContainer = document.getElementById('gridContainer');
-        const gridColsInput = document.getElementById('gridColsInput');
-        const gridRowsInput = document.getElementById('gridRowsInput');
-
-        const snapRef = db.ref('snapEnabled');
-        snapRef.on('value', (snap) => {
-            const val = snap.val();
-            if (val !== null && val !== undefined) {
-                snapEnabled = val;
-                document.getElementById('snapToggleBtn').classList.toggle('active', snapEnabled);
-                document.querySelectorAll('.token').forEach(el => el.classList.toggle('snap', snapEnabled));
-            }
-        });
-
-        function toggleSnap() {
-            if (!isGM) return;
-            snapEnabled = !snapEnabled;
-            snapRef.set(snapEnabled);
-            document.getElementById('log').textContent = '🎯 Прилипание: ' + (snapEnabled ? 'Вкл' : 'Выкл');
-        }
-
-        const gridSizeRef = db.ref('gridSize');
-        gridSizeRef.on('value', (snap) => {
-            const data = snap.val();
-            if (data) {
-                const nc = data.cols || 10;
-                const nr = data.rows || 6;
-                if (nc !== gridCols || nr !== gridRows) {
-                    gridCols = nc; gridRows = nr;
-                    gridColsInput.value = gridCols;
-                    gridRowsInput.value = gridRows;
-                    buildGrid();
-                    recalcTokenPositions();
-                }
-            }
-        });
-
-        function saveGridSize() {
-            gridSizeRef.set({ cols: gridCols, rows: gridRows });
-        }
-
+        // ===== СЕТКА =====
         function buildGrid() {
             gridOverlay.innerHTML = '';
             gridOverlay.style.gridTemplateColumns = 'repeat(' + gridCols + ', 1fr)';
@@ -792,7 +679,6 @@
                 gridOverlay.appendChild(cell);
             }
         }
-        buildGrid();
 
         function applyGridSize() {
             if (!isGM) return;
@@ -807,23 +693,22 @@
             gridRowsInput.value = gridRows;
             buildGrid();
             recalcTokenPositions();
-            saveGridSize();
-            document.getElementById('log').textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
+            gridSizeRef.set({ cols: gridCols, rows: gridRows });
+            logEl.textContent = '📐 Сетка: ' + gridCols + 'x' + gridRows;
         }
 
-        gridColsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyGridSize(); });
-        gridRowsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyGridSize(); });
+        function toggleGrid() {
+            gridVisible = !gridVisible;
+            gridOverlay.classList.toggle('hidden');
+            document.getElementById('gridToggleBtn').classList.toggle('active');
+        }
 
-        let tokenSizePercent = 55;
-        const tokenSizeSlider = document.getElementById('tokenSizeSlider');
-        const tokenSizeLabel = document.getElementById('tokenSizeLabel');
-
-        tokenSizeSlider.addEventListener('input', function() {
+        function toggleSnap() {
             if (!isGM) return;
-            tokenSizePercent = parseInt(this.value);
-            tokenSizeLabel.textContent = tokenSizePercent + '%';
-            updateTokenSizes();
-        });
+            snapEnabled = !snapEnabled;
+            snapRef.set(snapEnabled);
+            logEl.textContent = '🎯 Прилипание: ' + (snapEnabled ? 'Вкл' : 'Выкл');
+        }
 
         function updateTokenSizes() {
             const cellW = 100 / gridCols;
@@ -840,90 +725,23 @@
             });
         }
 
-        function toggleGrid() {
-            gridVisible = !gridVisible;
-            gridOverlay.classList.toggle('hidden');
-            document.getElementById('gridToggleBtn').classList.toggle('active');
-        }
-
-        // ==================== ФИГУРКИ ====================
-        const tokensLayer = document.getElementById('tokensLayer');
-        let tokens = {};
-        let nextId = 1;
-        let draggedToken = null;
-        let dragOffsetX = 0, dragOffsetY = 0;
-        let isLocalUpdate = false;
-        let isFirstLoad = true;
-        const tokensRef = db.ref('tokens');
-
+        // ===== ФИГУРКИ =====
         function getSnapped(x, y) {
             if (!snapEnabled) return { x, y };
             const cw = 100 / gridCols, ch = 100 / gridRows;
             const col = Math.round(x / cw), row = Math.round(y / ch);
-            return {
-                x: Math.max(0, Math.min(100, col * cw + cw / 2)),
-                y: Math.max(0, Math.min(100, row * ch + ch / 2))
-            };
+            return { x: Math.max(0, Math.min(100, col * cw + cw / 2)), y: Math.max(0, Math.min(100, row * ch + ch / 2)) };
         }
 
         function recalcTokenPositions() {
             if (Object.keys(tokens).length === 0) return;
             Object.values(tokens).forEach(t => {
                 const pos = getSnapped(t.x, t.y);
-                t.x = pos.x;
-                t.y = pos.y;
+                t.x = pos.x; t.y = pos.y;
             });
             debouncedSave();
             renderTokens();
         }
-
-        function loadFromLocalStorage() {
-            try {
-                const data = localStorage.getItem('dnd_tokens_backup');
-                if (data) {
-                    const parsed = JSON.parse(data);
-                    if (parsed && Object.keys(parsed).length > 0) {
-                        tokens = parsed;
-                        let maxId = 0;
-                        Object.keys(tokens).forEach(id => {
-                            const num = parseInt(id);
-                            if (num > maxId) maxId = num;
-                        });
-                        nextId = maxId + 1;
-                        renderTokens();
-                        setTimeout(updateTokenSizes, 50);
-                        return true;
-                    }
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        tokensRef.on('value', (snapshot) => {
-            if (isLocalUpdate) return;
-            const data = snapshot.val();
-            if (data) {
-                tokens = data;
-                let maxId = 0;
-                Object.keys(tokens).forEach(id => {
-                    const num = parseInt(id);
-                    if (num > maxId) maxId = num;
-                });
-                nextId = maxId + 1;
-            } else {
-                if (!loadFromLocalStorage()) {
-                    tokens = {};
-                    nextId = 1;
-                }
-                isFirstLoad = false;
-                renderTokens();
-                setTimeout(updateTokenSizes, 50);
-                return;
-            }
-            isFirstLoad = false;
-            renderTokens();
-            setTimeout(updateTokenSizes, 50);
-        });
 
         function renderToken(id) {
             const token = tokens[id];
@@ -936,10 +754,7 @@
                 el.dataset.id = id;
                 el.addEventListener('dblclick', () => deleteToken(id));
                 el.addEventListener('touchstart', (e) => {
-                    const timer = setTimeout(() => {
-                        if (navigator.vibrate) navigator.vibrate(50);
-                        deleteToken(id);
-                    }, 800);
+                    const timer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(50); deleteToken(id); }, 800);
                     el._timer = timer;
                 });
                 el.addEventListener('touchend', () => clearTimeout(el._timer));
@@ -967,11 +782,30 @@
             setTimeout(updateTokenSizes, 50);
         }
 
+        function loadFromLocalStorage() {
+            try {
+                const data = localStorage.getItem('dnd_tokens_backup');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    if (parsed && Object.keys(parsed).length > 0) {
+                        tokens = parsed;
+                        let maxId = 0;
+                        Object.keys(tokens).forEach(id => { const num = parseInt(id); if (num > maxId) maxId = num; });
+                        nextId = maxId + 1;
+                        renderTokens();
+                        setTimeout(updateTokenSizes, 50);
+                        return true;
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
+
         function deleteToken(id) {
             if (!isGM) return;
             isLocalUpdate = true;
             tokensRef.child(id).remove().then(() => { isLocalUpdate = false; });
-            document.getElementById('log').textContent = '🗑️ Удалён персонаж';
+            logEl.textContent = '🗑️ Удалён персонаж';
         }
 
         function addToken(icon) {
@@ -984,9 +818,9 @@
             tokensRef.child(id).set(data).then(() => { isLocalUpdate = false; });
             tokens[id] = data;
             renderToken(id);
-            hideIconPicker();
+            document.getElementById('iconPicker').classList.remove('active');
             if (navigator.vibrate) navigator.vibrate(20);
-            document.getElementById('log').textContent = '➕ Добавлен ' + icon;
+            logEl.textContent = '➕ Добавлен ' + icon;
         }
 
         function clearTokens() {
@@ -995,7 +829,7 @@
             if (confirm('Удалить всех персонажей?')) {
                 isLocalUpdate = true;
                 tokensRef.set(null).then(() => { isLocalUpdate = false; });
-                document.getElementById('log').textContent = '🗑️ Все удалены';
+                logEl.textContent = '🗑️ Все удалены';
             }
         }
 
@@ -1003,35 +837,22 @@
             if (!isGM) return;
             document.getElementById('iconPicker').classList.toggle('active');
         }
-        function hideIconPicker() {
-            document.getElementById('iconPicker').classList.remove('active');
-        }
 
         // ===== ПЕРЕТАСКИВАНИЕ ФИГУРОК =====
         function startDrag(e, id) {
             e.preventDefault();
             const token = tokens[id];
             if (!token) return;
-
             const rect = wrapper.getBoundingClientRect();
             let cx, cy;
-            if (e.type === 'touchstart') {
-                cx = e.touches[0].clientX;
-                cy = e.touches[0].clientY;
-            } else {
-                cx = e.clientX;
-                cy = e.clientY;
-            }
-
+            if (e.type === 'touchstart') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+            else { cx = e.clientX; cy = e.clientY; }
             const px = (cx - rect.left) / rect.width * 100;
             const py = (cy - rect.top) / rect.height * 100;
-
             const scaledPx = px / scale;
             const scaledPy = py / scale;
-
             dragOffsetX = scaledPx - token.x;
             dragOffsetY = scaledPy - token.y;
-
             draggedToken = id;
             window.addEventListener('mousemove', onDrag);
             window.addEventListener('mouseup', endDrag);
@@ -1044,48 +865,27 @@
             e.preventDefault();
             const token = tokens[draggedToken];
             if (!token) return;
-
             const rect = wrapper.getBoundingClientRect();
             let cx, cy;
-            if (e.type === 'touchmove') {
-                cx = e.touches[0].clientX;
-                cy = e.touches[0].clientY;
-            } else {
-                cx = e.clientX;
-                cy = e.clientY;
-            }
-
+            if (e.type === 'touchmove') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+            else { cx = e.clientX; cy = e.clientY; }
             let px = (cx - rect.left) / rect.width * 100;
             let py = (cy - rect.top) / rect.height * 100;
-
             px = px / scale;
             py = py / scale;
-
             let nx = px - dragOffsetX;
             let ny = py - dragOffsetY;
-
             nx = Math.max(0, Math.min(100, nx));
             ny = Math.max(0, Math.min(100, ny));
-
-            if (snapEnabled) {
-                const snapped = getSnapped(nx, ny);
-                nx = snapped.x;
-                ny = snapped.y;
-            }
-
+            if (snapEnabled) { const snapped = getSnapped(nx, ny); nx = snapped.x; ny = snapped.y; }
             token.x = nx;
             token.y = ny;
-
             const el = tokensLayer.querySelector(`[data-id="${draggedToken}"]`);
-            if (el) {
-                el.style.left = nx + '%';
-                el.style.top = ny + '%';
-            }
+            if (el) { el.style.left = nx + '%'; el.style.top = ny + '%'; }
         }
 
         function endDrag(e) {
             if (draggedToken !== null && tokens[draggedToken]) {
-                const token = tokens[draggedToken];
                 debouncedSave();
                 draggedToken = null;
             }
@@ -1095,25 +895,18 @@
             window.removeEventListener('touchend', endDrag);
         }
 
-        // ==================== КАРТЫ ====================
-        let currentMap = 'forest', isLocalMapUpdate = false;
-        const mapRef = db.ref('currentMap');
-        mapRef.on('value', (snap) => {
-            if (isLocalMapUpdate) return;
-            const name = snap.val();
-            if (name && name !== currentMap) { currentMap = name;
-                updateMapUI(name); }
-        });
-
+        // ===== КАРТЫ =====
         function changeMap(name) {
             if (!isGM) return;
             isLocalMapUpdate = true;
             currentMap = name;
             mapRef.set(name).then(() => { isLocalMapUpdate = false; });
             updateMapUI(name);
-            document.getElementById('log').textContent = '🗺️ Карта: ' + name;
+            logEl.textContent = '🗺️ Карта: ' + name;
             if (navigator.vibrate) navigator.vibrate(20);
         }
+
+        let currentMap = 'forest', isLocalMapUpdate = false;
 
         function updateMapUI(name) {
             mapImage.src = 'images/' + name + '.jpg';
@@ -1125,28 +918,14 @@
 
         function updateMapButtons() {
             document.querySelectorAll('.top-bar button[data-map]').forEach(b => {
-                if (isGM) {
-                    b.classList.remove('disabled');
-                } else {
-                    b.classList.add('disabled');
-                }
+                if (isGM) { b.classList.remove('disabled'); }
+                else { b.classList.add('disabled'); }
             });
         }
 
-        mapRef.once('value', (snap) => {
-            const name = snap.val();
-            if (name) { currentMap = name;
-                updateMapUI(name); }
-            updateMapButtons();
-            updateGMMode();
-        });
-
-        // ==================== КУБИКИ ====================
-        const MAX_LOG = 15;
-
+        // ===== ЛОГ БРОСКОВ =====
         function addLogEntry(player, sides, result) {
-            const container = document.getElementById('rollLogEntries');
-            const empty = container.querySelector('.roll-log-empty');
+            const empty = rollLogEntries.querySelector('.roll-log-empty');
             if (empty) empty.remove();
             const entry = document.createElement('div');
             entry.className = 'roll-log-entry';
@@ -1154,8 +933,10 @@
             if (sides === 20 && result === 20) valHtml = '<span class="roll-value roll-crit">' + result + ' 🔥</span>';
             else if (sides === 20 && result === 1) valHtml = '<span class="roll-value roll-fail">' + result + ' 💀</span>';
             entry.innerHTML = '<span class="roll-player">' + player + '</span><span class="roll-dice">d' + sides + '</span>' + valHtml;
-            container.prepend(entry);
-            while (container.children.length > MAX_LOG) container.removeChild(container.lastChild);
+            rollLogEntries.prepend(entry);
+            while (rollLogEntries.children.length > MAX_LOG) {
+                rollLogEntries.removeChild(rollLogEntries.lastChild);
+            }
         }
 
         function showToast(msg) {
@@ -1174,16 +955,100 @@
             let msg = displayName + ' кинул d' + sides + ': ' + result;
             if (crit) msg += ' 🔥 КРИТ!';
             if (fail) msg += ' 💀 ПРОВАЛ!';
-            document.getElementById('diceDisplay').textContent = '⏳';
+            diceDisplay.textContent = '⏳';
             addLogEntry(displayName, sides, result);
-            db.ref('rolls').push({ player: displayName, sides, result, crit, fail, timestamp: Date.now() });
+            rollsRef.push({ player: displayName, sides, result, crit, fail, timestamp: Date.now() });
             setTimeout(() => {
-                document.getElementById('diceDisplay').textContent = '🎲 ' + result;
-                document.getElementById('log').textContent = 'Твой бросок: ' + result;
+                diceDisplay.textContent = '🎲 ' + result;
+                logEl.textContent = 'Твой бросок: ' + result;
             }, 200);
         }
 
-        const rollsRef = db.ref('rolls');
+        // ============================================================
+        // 7. ПОДПИСКИ НА FIREBASE
+        // ============================================================
+
+        // Указки
+        pointersRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            pointersContainer.innerHTML = '';
+            if (!data) return;
+            Object.keys(data).forEach(key => {
+                const p = data[key];
+                const div = document.createElement('div');
+                div.className = 'pointer';
+                div.style.color = p.color || '#ff4444';
+                div.style.background = `radial-gradient(circle, ${p.color || '#ff4444'} 0%, transparent 70%)`;
+                div.style.left = p.x + '%';
+                div.style.top = p.y + '%';
+                if (p.name) {
+                    const label = document.createElement('div');
+                    label.className = 'label';
+                    label.textContent = p.name;
+                    div.appendChild(label);
+                }
+                pointersContainer.appendChild(div);
+            });
+        });
+
+        // Сетка (snap)
+        snapRef.on('value', (snap) => {
+            const val = snap.val();
+            if (val !== null && val !== undefined) {
+                snapEnabled = val;
+                document.getElementById('snapToggleBtn').classList.toggle('active', snapEnabled);
+                document.querySelectorAll('.token').forEach(el => el.classList.toggle('snap', snapEnabled));
+            }
+        });
+
+        // Размер сетки
+        gridSizeRef.on('value', (snap) => {
+            const data = snap.val();
+            if (data) {
+                const nc = data.cols || 10;
+                const nr = data.rows || 6;
+                if (nc !== gridCols || nr !== gridRows) {
+                    gridCols = nc; gridRows = nr;
+                    gridColsInput.value = gridCols;
+                    gridRowsInput.value = gridRows;
+                    buildGrid();
+                    recalcTokenPositions();
+                }
+            }
+        });
+
+        // Карта
+        mapRef.on('value', (snap) => {
+            if (isLocalMapUpdate) return;
+            const name = snap.val();
+            if (name && name !== currentMap) { currentMap = name; updateMapUI(name); }
+        });
+
+        // Токены (фигурки)
+        tokensRef.on('value', (snapshot) => {
+            if (isLocalUpdate) return;
+            const data = snapshot.val();
+            if (data) {
+                tokens = data;
+                let maxId = 0;
+                Object.keys(tokens).forEach(id => { const num = parseInt(id); if (num > maxId) maxId = num; });
+                nextId = maxId + 1;
+            } else {
+                if (!loadFromLocalStorage()) {
+                    tokens = {};
+                    nextId = 1;
+                }
+                isFirstLoad = false;
+                renderTokens();
+                setTimeout(updateTokenSizes, 50);
+                return;
+            }
+            isFirstLoad = false;
+            renderTokens();
+            setTimeout(updateTokenSizes, 50);
+        });
+
+        // Броски кубиков (синхронизация)
         rollsRef.limitToLast(1).on('child_added', (snap) => {
             const data = snap.val();
             if (data.player === displayName) return;
@@ -1192,14 +1057,164 @@
             if (data.crit) msg += ' 🔥';
             if (data.fail) msg += ' 💀';
             showToast(msg);
-            document.getElementById('diceDisplay').textContent = '⏳';
-            setTimeout(() => { document.getElementById('diceDisplay').textContent = '🎲 ' + data.result; }, 200);
+            diceDisplay.textContent = '⏳';
+            setTimeout(() => { diceDisplay.textContent = '🎲 ' + data.result; }, 200);
         });
 
-        // ==================== СТАРТ ====================
+        // ============================================================
+        // 8. СОБЫТИЯ И ИНИЦИАЛИЗАЦИЯ
+        // ============================================================
+
+        // Canvas для рисования
+        setTimeout(initCanvas, 100);
+        window.addEventListener('resize', initCanvas);
+
+        // Указка (движение мыши)
+        wrapper.addEventListener('mousemove', (e) => {
+            if (!pointerEnabled) return;
+            if (e.target.closest('.token')) return;
+            const rect = wrapper.getBoundingClientRect();
+            sendPointerPosition((e.clientX - rect.left) / rect.width * 100, (e.clientY - rect.top) / rect.height * 100);
+        });
+
+        wrapper.addEventListener('touchmove', (e) => {
+            if (!pointerEnabled) return;
+            if (e.target.closest('.token')) return;
+            if (e.touches.length === 1) {
+                const rect = wrapper.getBoundingClientRect();
+                sendPointerPosition((e.touches[0].clientX - rect.left) / rect.width * 100, (e.touches[0].clientY - rect.top) / rect.height * 100);
+            }
+        }, { passive: true });
+
+        wrapper.addEventListener('mouseleave', () => { if (myPointerRef) { myPointerRef.remove(); myPointerRef = null; } });
+        wrapper.addEventListener('touchend', () => { if (myPointerRef) { myPointerRef.remove(); myPointerRef = null; } }, { passive: true });
+
+        // Рисование (мышь)
+        drawLayer.addEventListener('mousedown', (e) => {
+            if (!drawEnabled || !isGM) return;
+            isDrawing = true;
+            const rect = drawLayer.getBoundingClientRect();
+            lastDrawX = (e.clientX - rect.left);
+            lastDrawY = (e.clientY - rect.top);
+        });
+
+        drawLayer.addEventListener('mousemove', (e) => {
+            if (!isDrawing || !drawEnabled || !isGM) return;
+            const rect = drawLayer.getBoundingClientRect();
+            const x = (e.clientX - rect.left);
+            const y = (e.clientY - rect.top);
+            ctx.beginPath();
+            ctx.moveTo(lastDrawX, lastDrawY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            lastDrawX = x;
+            lastDrawY = y;
+        });
+
+        drawLayer.addEventListener('mouseup', () => { isDrawing = false; });
+        drawLayer.addEventListener('mouseleave', () => { isDrawing = false; });
+
+        // Рисование (touch)
+        drawLayer.addEventListener('touchstart', (e) => {
+            if (!drawEnabled || !isGM) return;
+            e.preventDefault();
+            isDrawing = true;
+            const rect = drawLayer.getBoundingClientRect();
+            const touch = e.touches[0];
+            lastDrawX = (touch.clientX - rect.left);
+            lastDrawY = (touch.clientY - rect.top);
+        }, { passive: false });
+
+        drawLayer.addEventListener('touchmove', (e) => {
+            if (!isDrawing || !drawEnabled || !isGM) return;
+            e.preventDefault();
+            const rect = drawLayer.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = (touch.clientX - rect.left);
+            const y = (touch.clientY - rect.top);
+            ctx.beginPath();
+            ctx.moveTo(lastDrawX, lastDrawY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            lastDrawX = x;
+            lastDrawY = y;
+        }, { passive: false });
+
+        drawLayer.addEventListener('touchend', () => { isDrawing = false; });
+
+        // Панорамирование карты
+        wrapper.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.token')) return;
+            if (drawEnabled || pointerEnabled) return;
+            isDraggingMap = true;
+            startX = e.clientX; startY = e.clientY;
+            startPanX = panX; startPanY = panY;
+            wrapper.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingMap) return;
+            panX = startPanX + (e.clientX - startX);
+            panY = startPanY + (e.clientY - startY);
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => { isDraggingMap = false; wrapper.style.cursor = 'grab'; });
+
+        wrapper.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.token')) return;
+            if (drawEnabled || pointerEnabled) return;
+            if (e.touches.length === 1) {
+                isDraggingMap = true;
+                startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+                startPanX = panX; startPanY = panY;
+            }
+        }, { passive: true });
+
+        wrapper.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && isDraggingMap) {
+                panX = startPanX + (e.touches[0].clientX - startX);
+                panY = startPanY + (e.touches[0].clientY - startY);
+                updateTransform();
+            }
+            if (e.touches.length === 2) {
+                const t1 = e.touches[0], t2 = e.touches[1];
+                const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                if (lastTouchDist > 0) {
+                    scale = Math.min(5, Math.max(0.2, scale + (dist - lastTouchDist) * 0.005));
+                    updateTransform();
+                }
+                lastTouchDist = dist;
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        wrapper.addEventListener('touchend', () => { isDraggingMap = false; lastTouchDist = 0; }, { passive: true });
+
+        // Ползунок размера фигурок
+        tokenSizeSlider.addEventListener('input', function() {
+            if (!isGM) return;
+            tokenSizePercent = parseInt(this.value);
+            tokenSizeLabel.textContent = tokenSizePercent + '%';
+            updateTokenSizes();
+        });
+
+        // Ввод размера сетки по Enter
+        gridColsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyGridSize(); });
+        gridRowsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyGridSize(); });
+
+        // Старт
+        mapRef.once('value', (snap) => {
+            const name = snap.val();
+            if (name) { currentMap = name; updateMapUI(name); }
+            updateMapButtons();
+            updateGMMode();
+        });
+
         loadFromLocalStorage();
+        buildGrid();
         updateTransform();
-        if (!playerName) document.getElementById('log').textContent = '👋 Введи свой ник!';
+        if (!playerName) logEl.textContent = '👋 Введи свой ник!';
     </script>
 </body>
 </html>
