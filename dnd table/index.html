@@ -683,263 +683,270 @@
 
         buildGrid();
 
-        // ============================================================
-        // БЛОК 5: ФИГУРКИ (Токены) - ИСПРАВЛЕНО
-        // ============================================================
-        const tokensLayer = document.getElementById('tokensLayer');
-        const tokenSizeSlider = document.getElementById('tokenSizeSlider');
-        const tokenSizeLabel = document.getElementById('tokenSizeLabel');
-        let tokenSizePercent = 55;
-        let tokens = {};
-        let nextId = 1;
-        let draggedToken = null;
-        let dragOffsetX = 0, dragOffsetY = 0;
-        let isLocalUpdate = false;
-        let isFirstLoad = true;
-        let saveTimer = null;
-        let isSaving = false;
-        const tokensRef = db.ref('tokens');
+      // ============================================================
+// БЛОК 5: ФИГУРКИ (Токены) - ИСПРАВЛЕНО
+// ============================================================
+const tokensLayer = document.getElementById('tokensLayer');
+const tokenSizeSlider = document.getElementById('tokenSizeSlider');
+const tokenSizeLabel = document.getElementById('tokenSizeLabel');
+let tokenSizePercent = 55;
+let tokens = {};
+let nextId = 1;
+let draggedToken = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let isLocalUpdate = false;
+let isFirstLoad = true;
+let saveTimer = null;
+let isSaving = false;
+const tokensRef = db.ref('tokens');
 
-        function getSnapped(x, y) {
-            if (!snapEnabled) return { x, y };
-            const cw = 100 / gridCols, ch = 100 / gridRows;
-            const col = Math.round(x / cw), row = Math.round(y / ch);
-            return { x: Math.max(0, Math.min(100, col * cw + cw / 2)), y: Math.max(0, Math.min(100, row * ch + ch / 2)) };
-        }
+function getSnapped(x, y) {
+    if (!snapEnabled) return { x, y };
+    const cw = 100 / gridCols, ch = 100 / gridRows;
+    const col = Math.round(x / cw), row = Math.round(y / ch);
+    return { x: Math.max(0, Math.min(100, col * cw + cw / 2)), y: Math.max(0, Math.min(100, row * ch + ch / 2)) };
+}
 
-        function recalcTokenPositions() {
-            if (Object.keys(tokens).length === 0) return;
-            Object.values(tokens).forEach(t => {
-                const pos = getSnapped(t.x, t.y);
-                t.x = pos.x; t.y = pos.y;
-            });
-            debouncedSave();
-            renderTokens();
-        }
+function recalcTokenPositions() {
+    if (Object.keys(tokens).length === 0) return;
+    Object.values(tokens).forEach(t => {
+        if (!t) return; // <-- ПРОВЕРКА НА NULL
+        const pos = getSnapped(t.x, t.y);
+        t.x = pos.x;
+        t.y = pos.y;
+    });
+    debouncedSave();
+    renderTokens();
+}
 
-        function renderToken(id) {
-            const token = tokens[id];
-            if (!token) return;
-            let el = tokensLayer.querySelector(`[data-id="${id}"]`);
-            if (!el) {
-                el = document.createElement('div');
-                el.className = 'token';
-                if (snapEnabled) el.classList.add('snap');
-                el.dataset.id = id;
-                el.addEventListener('dblclick', () => deleteToken(id));
-                el.addEventListener('touchstart', (e) => {
-                    const timer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(50); deleteToken(id); }, 800);
-                    el._timer = timer;
-                });
-                el.addEventListener('touchend', () => clearTimeout(el._timer));
-                el.addEventListener('touchmove', () => clearTimeout(el._timer));
-                el.addEventListener('mousedown', (e) => startDrag(e, id));
-                el.addEventListener('touchstart', (e) => startDrag(e, id), { passive: false });
-                tokensLayer.appendChild(el);
-            }
-            if (token.avatar) {
-                el.innerHTML = `<img src="${token.avatar}" alt="">`;
-            } else {
-                el.innerHTML = `<span class="emoji">${token.icon || '🧙‍♂️'}</span>`;
-            }
-            el.style.left = token.x + '%';
-            el.style.top = token.y + '%';
-            const size = Math.min(100 / gridCols, 100 / gridRows) * (tokenSizePercent / 100);
-            el.style.width = size + '%';
-            el.style.height = size + '%';
-            el.style.fontSize = Math.max(6, Math.min(30, size * 0.9)) + 'px';
-        }
+function renderToken(id) {
+    const token = tokens[id];
+    if (!token) return;
+    let el = tokensLayer.querySelector(`[data-id="${id}"]`);
+    if (!el) {
+        el = document.createElement('div');
+        el.className = 'token';
+        if (snapEnabled) el.classList.add('snap');
+        el.dataset.id = id;
+        el.addEventListener('dblclick', () => deleteToken(id));
+        el.addEventListener('touchstart', (e) => {
+            const timer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(50); deleteToken(id); }, 800);
+            el._timer = timer;
+        });
+        el.addEventListener('touchend', () => clearTimeout(el._timer));
+        el.addEventListener('touchmove', () => clearTimeout(el._timer));
+        el.addEventListener('mousedown', (e) => startDrag(e, id));
+        el.addEventListener('touchstart', (e) => startDrag(e, id), { passive: false });
+        tokensLayer.appendChild(el);
+    }
+    if (token.avatar) {
+        el.innerHTML = `<img src="${token.avatar}" alt="">`;
+    } else {
+        el.innerHTML = `<span class="emoji">${token.icon || '🧙‍♂️'}</span>`;
+    }
+    el.style.left = token.x + '%';
+    el.style.top = token.y + '%';
+    const size = Math.min(100 / gridCols, 100 / gridRows) * (tokenSizePercent / 100);
+    el.style.width = size + '%';
+    el.style.height = size + '%';
+    el.style.fontSize = Math.max(6, Math.min(30, size * 0.9)) + 'px';
+}
 
-        function renderTokens() {
-            tokensLayer.innerHTML = '';
-            Object.keys(tokens).forEach(id => renderToken(parseInt(id)));
-            setTimeout(updateTokenSizes, 50);
-        }
+function renderTokens() {
+    tokensLayer.innerHTML = '';
+    Object.keys(tokens).forEach(id => renderToken(parseInt(id)));
+    setTimeout(updateTokenSizes, 50);
+}
 
-        function updateTokenSizes() {
-            const cellW = 100 / gridCols;
-            const cellH = 100 / gridRows;
-            const size = Math.min(cellW, cellH) * (tokenSizePercent / 100);
-            document.querySelectorAll('.token').forEach(t => {
-                t.style.width = size + '%';
-                t.style.height = size + '%';
-                t.style.fontSize = Math.max(6, Math.min(30, size * 0.9)) + 'px';
-                t.style.minWidth = '10px';
-                t.style.minHeight = '10px';
-                t.style.maxWidth = '70px';
-                t.style.maxHeight = '70px';
-            });
-        }
+function updateTokenSizes() {
+    const cellW = 100 / gridCols;
+    const cellH = 100 / gridRows;
+    const size = Math.min(cellW, cellH) * (tokenSizePercent / 100);
+    document.querySelectorAll('.token').forEach(t => {
+        t.style.width = size + '%';
+        t.style.height = size + '%';
+        t.style.fontSize = Math.max(6, Math.min(30, size * 0.9)) + 'px';
+        t.style.minWidth = '10px';
+        t.style.minHeight = '10px';
+        t.style.maxWidth = '70px';
+        t.style.maxHeight = '70px';
+    });
+}
 
-        function loadFromLocalStorage() {
-            try {
-                const data = localStorage.getItem('dnd_tokens_backup');
-                if (data) {
-                    const parsed = JSON.parse(data);
-                    if (parsed && Object.keys(parsed).length > 0) {
-                        tokens = parsed;
-                        let maxId = 0;
-                        Object.keys(tokens).forEach(id => { const num = parseInt(id); if (num > maxId) maxId = num; });
-                        nextId = maxId + 1;
-                        renderTokens();
-                        setTimeout(updateTokenSizes, 50);
-                        return true;
-                    }
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        function debouncedSave() {
-            try { localStorage.setItem('dnd_tokens_backup', JSON.stringify(tokens)); } catch (e) {}
-            if (saveTimer) clearTimeout(saveTimer);
-            saveTimer = setTimeout(() => {
-                if (!isSaving && Object.keys(tokens).length > 0) {
-                    isSaving = true;
-                    tokensRef.set(tokens).then(() => { isSaving = false; }).catch(() => { isSaving = false; });
-                }
-                saveTimer = null;
-            }, 2000);
-        }
-
-        function deleteToken(id) {
-            if (!isGM) return;
-            isLocalUpdate = true;
-            tokensRef.child(id).remove().then(() => { isLocalUpdate = false; });
-            document.getElementById('log').textContent = '🗑️ Удалён персонаж';
-        }
-
-        function addToken(icon) {
-            if (!isGM) return;
-            const pos = getSnapped(50 + (Math.random() - 0.5) * 10, 50 + (Math.random() - 0.5) * 10);
-            const id = nextId++;
-            const avatar = localStorage.getItem('dnd_avatar') || null;
-            const data = { icon: icon, x: pos.x, y: pos.y, player: displayName, avatar: avatar };
-            isLocalUpdate = true;
-            tokensRef.child(id).set(data).then(() => { isLocalUpdate = false; });
-            tokens[id] = data;
-            renderToken(id);
-            document.getElementById('iconPicker').classList.remove('active');
-            if (navigator.vibrate) navigator.vibrate(20);
-            document.getElementById('log').textContent = '➕ Добавлен ' + icon;
-        }
-
-        // ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ ОЧИСТКИ =====
-        function clearTokens() {
-            if (!isGM) return;
-            if (Object.keys(tokens).length === 0) {
-                document.getElementById('log').textContent = '⚠️ Нет персонажей для удаления';
-                return;
-            }
-            if (confirm('🗑️ Удалить ВСЕХ персонажей с карты?')) {
-                isLocalUpdate = true;
-                tokensRef.set(null).then(() => {
-                    isLocalUpdate = false;
-                    tokens = {};
-                    nextId = 1;
-                    renderTokens();
-                    document.getElementById('log').textContent = '🗑️ Все персонажи удалены';
-                }).catch(() => {
-                    isLocalUpdate = false;
-                    document.getElementById('log').textContent = '❌ Ошибка при удалении';
-                });
-            }
-        }
-
-        function showIconPicker() {
-            if (!isGM) return;
-            document.getElementById('iconPicker').classList.toggle('active');
-        }
-
-        tokensRef.on('value', (snapshot) => {
-            if (isLocalUpdate) return;
-            const data = snapshot.val();
-            if (data) {
-                tokens = data;
+function loadFromLocalStorage() {
+    try {
+        const data = localStorage.getItem('dnd_tokens_backup');
+        if (data) {
+            const parsed = JSON.parse(data);
+            if (parsed && Object.keys(parsed).length > 0) {
+                tokens = parsed;
                 let maxId = 0;
                 Object.keys(tokens).forEach(id => { const num = parseInt(id); if (num > maxId) maxId = num; });
                 nextId = maxId + 1;
-            } else {
-                if (!loadFromLocalStorage()) {
-                    tokens = {};
-                    nextId = 1;
-                }
-                isFirstLoad = false;
                 renderTokens();
                 setTimeout(updateTokenSizes, 50);
-                return;
+                return true;
             }
-            isFirstLoad = false;
+        }
+    } catch (e) {}
+    return false;
+}
+
+function debouncedSave() {
+    try { localStorage.setItem('dnd_tokens_backup', JSON.stringify(tokens)); } catch (e) {}
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+        if (!isSaving && Object.keys(tokens).length > 0) {
+            isSaving = true;
+            tokensRef.set(tokens).then(() => { isSaving = false; }).catch(() => { isSaving = false; });
+        }
+        saveTimer = null;
+    }, 2000);
+}
+
+function deleteToken(id) {
+    if (!isGM) return;
+    isLocalUpdate = true;
+    tokensRef.child(id).remove().then(() => { isLocalUpdate = false; });
+    document.getElementById('log').textContent = '🗑️ Удалён персонаж';
+}
+
+function addToken(icon) {
+    if (!isGM) return;
+    const pos = getSnapped(50 + (Math.random() - 0.5) * 10, 50 + (Math.random() - 0.5) * 10);
+    const id = nextId++;
+    const avatar = localStorage.getItem('dnd_avatar') || null;
+    const data = { icon: icon, x: pos.x, y: pos.y, player: displayName, avatar: avatar };
+    isLocalUpdate = true;
+    tokensRef.child(id).set(data).then(() => { isLocalUpdate = false; });
+    tokens[id] = data;
+    renderToken(id);
+    hideIconPicker(); // <-- ТЕПЕРЬ ФУНКЦИЯ СУЩЕСТВУЕТ
+    if (navigator.vibrate) navigator.vibrate(20);
+    document.getElementById('log').textContent = '➕ Добавлен ' + icon;
+}
+
+// ===== ДОБАВЛЕННАЯ ФУНКЦИЯ =====
+function hideIconPicker() {
+    document.getElementById('iconPicker').classList.remove('active');
+}
+
+function showIconPicker() {
+    if (!isGM) return;
+    document.getElementById('iconPicker').classList.toggle('active');
+}
+
+// ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ ОЧИСТКИ =====
+function clearTokens() {
+    if (!isGM) return;
+    if (Object.keys(tokens).length === 0) {
+        document.getElementById('log').textContent = '⚠️ Нет персонажей для удаления';
+        return;
+    }
+    if (confirm('🗑️ Удалить ВСЕХ персонажей с карты?')) {
+        isLocalUpdate = true;
+        tokensRef.set(null).then(() => {
+            isLocalUpdate = false;
+            tokens = {};
+            nextId = 1;
             renderTokens();
-            setTimeout(updateTokenSizes, 50);
+            document.getElementById('log').textContent = '🗑️ Все персонажи удалены';
+        }).catch(() => {
+            isLocalUpdate = false;
+            document.getElementById('log').textContent = '❌ Ошибка при удалении';
         });
+    }
+}
 
-        tokenSizeSlider.addEventListener('input', function() {
-            if (!isGM) return;
-            tokenSizePercent = parseInt(this.value);
-            tokenSizeLabel.textContent = tokenSizePercent + '%';
-            updateTokenSizes();
-        });
-
-        // Перетаскивание фигурок
-        function startDrag(e, id) {
-            e.preventDefault();
-            const token = tokens[id];
-            if (!token) return;
-            const rect = wrapper.getBoundingClientRect();
-            let cx, cy;
-            if (e.type === 'touchstart') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
-            else { cx = e.clientX; cy = e.clientY; }
-            const px = (cx - rect.left) / rect.width * 100;
-            const py = (cy - rect.top) / rect.height * 100;
-            const scaledPx = px / scale;
-            const scaledPy = py / scale;
-            dragOffsetX = scaledPx - token.x;
-            dragOffsetY = scaledPy - token.y;
-            draggedToken = id;
-            window.addEventListener('mousemove', onDrag);
-            window.addEventListener('mouseup', endDrag);
-            window.addEventListener('touchmove', onDrag, { passive: false });
-            window.addEventListener('touchend', endDrag, { passive: false });
+tokensRef.on('value', (snapshot) => {
+    if (isLocalUpdate) return;
+    const data = snapshot.val();
+    if (data) {
+        tokens = data;
+        let maxId = 0;
+        Object.keys(tokens).forEach(id => { const num = parseInt(id); if (num > maxId) maxId = num; });
+        nextId = maxId + 1;
+    } else {
+        if (!loadFromLocalStorage()) {
+            tokens = {};
+            nextId = 1;
         }
+        isFirstLoad = false;
+        renderTokens();
+        setTimeout(updateTokenSizes, 50);
+        return;
+    }
+    isFirstLoad = false;
+    renderTokens();
+    setTimeout(updateTokenSizes, 50);
+});
 
-        function onDrag(e) {
-            if (draggedToken === null) return;
-            e.preventDefault();
-            const token = tokens[draggedToken];
-            if (!token) return;
-            const rect = wrapper.getBoundingClientRect();
-            let cx, cy;
-            if (e.type === 'touchmove') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
-            else { cx = e.clientX; cy = e.clientY; }
-            let px = (cx - rect.left) / rect.width * 100;
-            let py = (cy - rect.top) / rect.height * 100;
-            px = px / scale;
-            py = py / scale;
-            let nx = px - dragOffsetX;
-            let ny = py - dragOffsetY;
-            nx = Math.max(0, Math.min(100, nx));
-            ny = Math.max(0, Math.min(100, ny));
-            if (snapEnabled) { const snapped = getSnapped(nx, ny); nx = snapped.x; ny = snapped.y; }
-            token.x = nx;
-            token.y = ny;
-            const el = tokensLayer.querySelector(`[data-id="${draggedToken}"]`);
-            if (el) { el.style.left = nx + '%'; el.style.top = ny + '%'; }
-        }
+tokenSizeSlider.addEventListener('input', function() {
+    if (!isGM) return;
+    tokenSizePercent = parseInt(this.value);
+    tokenSizeLabel.textContent = tokenSizePercent + '%';
+    updateTokenSizes();
+});
 
-        function endDrag(e) {
-            if (draggedToken !== null && tokens[draggedToken]) {
-                debouncedSave();
-                draggedToken = null;
-            }
-            window.removeEventListener('mousemove', onDrag);
-            window.removeEventListener('mouseup', endDrag);
-            window.removeEventListener('touchmove', onDrag);
-            window.removeEventListener('touchend', endDrag);
-        }
+// Перетаскивание фигурок
+function startDrag(e, id) {
+    e.preventDefault();
+    const token = tokens[id];
+    if (!token) return;
+    const rect = wrapper.getBoundingClientRect();
+    let cx, cy;
+    if (e.type === 'touchstart') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+    else { cx = e.clientX; cy = e.clientY; }
+    const px = (cx - rect.left) / rect.width * 100;
+    const py = (cy - rect.top) / rect.height * 100;
+    const scaledPx = px / scale;
+    const scaledPy = py / scale;
+    dragOffsetX = scaledPx - token.x;
+    dragOffsetY = scaledPy - token.y;
+    draggedToken = id;
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchmove', onDrag, { passive: false });
+    window.addEventListener('touchend', endDrag, { passive: false });
+}
 
-        loadFromLocalStorage();
+function onDrag(e) {
+    if (draggedToken === null) return;
+    e.preventDefault();
+    const token = tokens[draggedToken];
+    if (!token) return;
+    const rect = wrapper.getBoundingClientRect();
+    let cx, cy;
+    if (e.type === 'touchmove') { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+    else { cx = e.clientX; cy = e.clientY; }
+    let px = (cx - rect.left) / rect.width * 100;
+    let py = (cy - rect.top) / rect.height * 100;
+    px = px / scale;
+    py = py / scale;
+    let nx = px - dragOffsetX;
+    let ny = py - dragOffsetY;
+    nx = Math.max(0, Math.min(100, nx));
+    ny = Math.max(0, Math.min(100, ny));
+    if (snapEnabled) { const snapped = getSnapped(nx, ny); nx = snapped.x; ny = snapped.y; }
+    token.x = nx;
+    token.y = ny;
+    const el = tokensLayer.querySelector(`[data-id="${draggedToken}"]`);
+    if (el) { el.style.left = nx + '%'; el.style.top = ny + '%'; }
+}
 
+function endDrag(e) {
+    if (draggedToken !== null && tokens[draggedToken]) {
+        debouncedSave();
+        draggedToken = null;
+    }
+    window.removeEventListener('mousemove', onDrag);
+    window.removeEventListener('mouseup', endDrag);
+    window.removeEventListener('touchmove', onDrag);
+    window.removeEventListener('touchend', endDrag);
+}
+
+loadFromLocalStorage();
+        
         // ============================================================
         // БЛОК 6: УКАЗКА (Pointer)
         // ============================================================
