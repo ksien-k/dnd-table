@@ -10,7 +10,7 @@
     
     <style>
         /* ============================================================
-           БЛОК 0: СТИЛИ (CSS)
+           БЛОК 0: СТИЛИ (CSS) - БЕЗ ИЗМЕНЕНИЙ
            ============================================================ */
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
@@ -684,7 +684,7 @@
         buildGrid();
 
         // ============================================================
-        // БЛОК 5: ФИГУРКИ (Токены)
+        // БЛОК 5: ФИГУРКИ (Токены) - ИСПРАВЛЕНО
         // ============================================================
         const tokensLayer = document.getElementById('tokensLayer');
         const tokenSizeSlider = document.getElementById('tokenSizeSlider');
@@ -824,13 +824,25 @@
             document.getElementById('log').textContent = '➕ Добавлен ' + icon;
         }
 
+        // ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ ОЧИСТКИ =====
         function clearTokens() {
             if (!isGM) return;
-            if (Object.keys(tokens).length === 0) return;
-            if (confirm('Удалить всех персонажей?')) {
+            if (Object.keys(tokens).length === 0) {
+                document.getElementById('log').textContent = '⚠️ Нет персонажей для удаления';
+                return;
+            }
+            if (confirm('🗑️ Удалить ВСЕХ персонажей с карты?')) {
                 isLocalUpdate = true;
-                tokensRef.set(null).then(() => { isLocalUpdate = false; });
-                document.getElementById('log').textContent = '🗑️ Все удалены';
+                tokensRef.set(null).then(() => {
+                    isLocalUpdate = false;
+                    tokens = {};
+                    nextId = 1;
+                    renderTokens();
+                    document.getElementById('log').textContent = '🗑️ Все персонажи удалены';
+                }).catch(() => {
+                    isLocalUpdate = false;
+                    document.getElementById('log').textContent = '❌ Ошибка при удалении';
+                });
             }
         }
 
